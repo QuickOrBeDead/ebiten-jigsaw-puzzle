@@ -111,6 +111,7 @@ func (puz *Puzzle) Draw(screen *ebiten.Image) {
 		screen.DrawImage(puz.cachedImage, nil)
 
 		ag := puz.groupsMap[puz.activeGroup]
+		ag.DrawShadow(screen)
 		ag.Draw(screen)
 		return
 	}
@@ -125,6 +126,8 @@ func (puz *Puzzle) mergeGroups(sourceId, targetId piece.GroupId, translateX, tra
 	for _, p := range s.Pieces {
 		p.GroupId = targetId
 		p.Move(translateX, translateY)
+
+		t.MergePath(p)
 	}
 
 	t.ResetNeighbors(puz.pieceMap, s.Pieces)

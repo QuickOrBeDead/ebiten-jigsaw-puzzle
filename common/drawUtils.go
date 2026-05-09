@@ -8,8 +8,8 @@ import (
 )
 
 func DrawShadowForPath(screen *ebiten.Image, x, y float64, path *vector.Path) {
-	maxOffset := 8
-	baseAlpha := 50
+	maxOffset := 2
+	baseAlpha := 85
 	for i := 1; i <= maxOffset; i++ {
 		alpha := uint8(baseAlpha / i)
 		offset := float64(i)
