@@ -28,10 +28,22 @@ type GameScene struct {
 	showImage         bool
 	previewImage      *common.PreviewImage
 
+	frameCache      *ebiten.Image
+	frameCacheValid bool
+
+	lastInputTime  time.Time
+	lastMouseX     int
+	lastMouseY     int
+	lastTimeUpdate int64
+	elapsedTimeStr string
+
 	text *common.TextRenderer
 }
 
 func NewGameScene(gameImage *common.GameImage) *GameScene {
+	ebiten.SetScreenClearedEveryFrame(false)
+	ebiten.SetVsyncEnabled(false)
+
 	text := common.NewTextRenderer(common.RobotoBoldFontName, common.BodyTextColor, 40, etxt.Center)
 	buttonOptions := []common.ButtonOptFunc{
 		common.ButtonOption.WithColor(common.HeaderButtonColor),
@@ -61,6 +73,8 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 		pictureName:       gameImage.GetName(),
 		startTime:         time.Now().Unix(),
 		endTime:           0,
+		lastInputTime:     time.Now(),
+		frameCache:        ebiten.NewImage(common.ScreenWidth, common.ScreenHeight),
 		moves:             0,
 		showGhost:         false,
 		showImage:         false,
@@ -114,14 +128,18 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 }
 
 func (g *GameScene) Update(context *common.SceneContext) error {
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		mx, my := ebiten.CursorPosition()
+	now := time.Now()
+	hasInput := false
 
+	mx, my := ebiten.CursorPosition()
+
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		hasInput = true
 		g.puzzle.SetPieceBeingDragged(mx, my)
 	}
 
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-		mx, my := ebiten.CursorPosition()
+		hasInput = true
 		g.puzzle.HandleDraggedPieceSnapping(mx, my)
 		if g.puzzle.DropPuzzlePieces() {
 			g.incrementMoves()
@@ -129,13 +147,27 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 	}
 
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		mx, my := ebiten.CursorPosition()
+		hasInput = true
 		g.puzzle.MoveDraggedPiece(mx, my)
+	}
+
+	if mx != g.lastMouseX || my != g.lastMouseY {
+		hasInput = true
+		g.lastMouseX, g.lastMouseY = mx, my
+	}
+
+	if hasInput {
+		g.lastInputTime = now
+		g.frameCacheValid = false
+		ebiten.SetTPS(60)
+	} else if now.Sub(g.lastInputTime) > 2*time.Second {
+		ebiten.SetTPS(1)
 	}
 
 	for _, button := range g.headerButtons {
 		button.Update()
 		if button.Clicked {
+			g.frameCacheValid = false
 			switch button.Label {
 			case "Home":
 				context.SceneManager.SetScene("Home")
@@ -149,6 +181,7 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 		button.Update()
 
 		if button.Clicked {
+			g.frameCacheValid = false
 			switch button.Label {
 			case "Image":
 				g.showImage = !g.showImage
@@ -159,8 +192,15 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 	}
 
 	if !g.isPuzzleCompleted {
-		g.isPuzzleCompleted = g.puzzle.IsSolved()
-		g.endTime = time.Now().Unix()
+		if g.puzzle.IsSolved() {
+			g.isPuzzleCompleted = true
+			g.endTime = now.Unix()
+			g.frameCacheValid = false
+		} else if now.Unix() != g.lastTimeUpdate {
+			g.lastTimeUpdate = now.Unix()
+			g.elapsedTimeStr = formatDuration(now.Unix() - g.startTime)
+			g.frameCacheValid = false
+		}
 	}
 
 	return nil
@@ -173,25 +213,33 @@ func (g *GameScene) incrementMoves() {
 }
 
 func (g *GameScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
-	screen.Fill(common.BackgroundColor)
+	if g.frameCacheValid {
+		return
+	}
+	g.renderFrame(g.frameCache)
+	screen.DrawImage(g.frameCache, nil)
+	g.frameCacheValid = true
+}
+
+func (g *GameScene) renderFrame(dst *ebiten.Image) {
+	dst.Fill(common.BackgroundColor)
 
 	if g.showGhost {
 		opt := &ebiten.DrawImageOptions{}
 
-		opt.ColorScale.Scale(0.5, 0.5, 0.5, 1) // make ghost image semi-transparent
+		opt.ColorScale.Scale(0.5, 0.5, 0.5, 1)
 
-		// translate the ghost image to center
 		opt.GeoM.Translate(
 			(float64(common.ScreenWidth)-float64(g.image.Bounds().Dx()))/2,
 			(float64(common.ScreenHeight)-float64(g.image.Bounds().Dy()))/2,
 		)
-		screen.DrawImage(g.image, opt)
+		dst.DrawImage(g.image, opt)
 	}
 
-	g.puzzle.Draw(screen)
+	g.puzzle.Draw(dst)
 
-	g.drawHeader(screen)
-	g.drawFooter(screen)
+	g.drawHeader(dst)
+	g.drawFooter(dst)
 }
 
 func (g *GameScene) drawHeader(screen *ebiten.Image) {
@@ -280,26 +328,23 @@ func (g *GameScene) drawCompletionBanner(screen *ebiten.Image) {
 	g.text.DrawHorizontalCenter(screen, fmt.Sprintf("Time: %s  |  Moves: %d", elapsed, g.moves), int(bannerY)+75)
 }
 
-func (g *GameScene) getElapsedTime() string {
-	var elapsed int64
-	if g.isPuzzleCompleted {
-		elapsed = g.endTime - g.startTime
-	} else {
-		elapsed = time.Now().Unix() - g.startTime
-	}
-
+func formatDuration(elapsed int64) string {
 	days := elapsed / (24 * 3600)
 	hours := (elapsed % (24 * 3600)) / 3600
 	minutes := (elapsed % 3600) / 60
 	seconds := elapsed % 60
 
-	var timeStr string
 	if days > 0 {
-		timeStr = fmt.Sprintf("%d.%02d:%02d:%02d", days, hours, minutes, seconds)
+		return fmt.Sprintf("%d.%02d:%02d:%02d", days, hours, minutes, seconds)
 	} else if hours > 0 {
-		timeStr = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
-	} else {
-		timeStr = fmt.Sprintf("%02d:%02d", minutes, seconds)
+		return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 	}
-	return timeStr
+	return fmt.Sprintf("%02d:%02d", minutes, seconds)
+}
+
+func (g *GameScene) getElapsedTime() string {
+	if g.isPuzzleCompleted {
+		return formatDuration(g.endTime - g.startTime)
+	}
+	return g.elapsedTimeStr
 }
