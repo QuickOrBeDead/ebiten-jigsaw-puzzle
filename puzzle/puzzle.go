@@ -10,6 +10,7 @@ import (
 )
 
 type Puzzle struct {
+	PieceCount         int
 	pieceMap           map[piece.PieceId]*piece.Piece
 	groupsMap          map[piece.GroupId]*piece.PieceGroup
 	groupSlice         []*piece.PieceGroup
@@ -32,6 +33,7 @@ func NewPuzzle(pieces []*piece.Piece, groups []*piece.PieceGroup, rows, cols int
 	}
 
 	return &Puzzle{
+		PieceCount:         len(pieces),
 		pieceMap:           pieceMap,
 		groupsMap:          groupsMap,
 		groupSlice:         groups,

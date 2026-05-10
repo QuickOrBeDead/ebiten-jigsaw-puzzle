@@ -22,13 +22,12 @@ type imageWithName struct {
 }
 
 type puzzleImage struct {
-	image      *ebiten.Image
-	name       string
-	x, y       float64
-	scale      float64
-	baseScale  float64
-	hovered    bool
-	hoverScale float64
+	previewImage *common.PreviewImage
+	name         string
+	x, y         float64
+	baseScale    float64
+	hovered      bool
+	hoverScale   float64
 }
 
 type HomeScene struct {
@@ -36,6 +35,7 @@ type HomeScene struct {
 	uploadButton *common.Button
 	gameImage    *common.GameImage
 	text         *common.TextRenderer
+	startDialog  *startGameDialog
 }
 
 func NewHomeScene(gameImage *common.GameImage) *HomeScene {
@@ -48,6 +48,8 @@ func NewHomeScene(gameImage *common.GameImage) *HomeScene {
 
 	screenWidth := float64(common.ScreenWidth)
 	screenHeight := float64(common.ScreenHeight)
+
+	text := common.NewTextRenderer(common.RobotoBoldFontName, common.TitleColor, 40, etxt.Center)
 
 	baseScale := 0.32
 	hoverScale := baseScale * 1.05
@@ -97,22 +99,23 @@ func NewHomeScene(gameImage *common.GameImage) *HomeScene {
 			col := i % numCols
 			row := i / numCols
 
-			x := leftMargin + spacingX + float64(col)*(maxImgWidthHover+spacingX) + maxImgWidthHover/2
-			y := topMargin + spacingY + float64(row)*(maxImgHeightHover+spacingY) + maxImgHeightHover/2 + float64(row*8)
+			x := leftMargin + spacingX + float64(col)*(maxImgWidthHover+spacingX)
+			y := topMargin + spacingY + float64(row)*(maxImgHeightHover+spacingY) + float64(row*8)
 
+			previewImage := common.NewPreviewImage(
+				img.image, x, y, baseScale,
+				common.PreviewImageOption.WithBorderColor(common.PrimaryColor),
+				common.PreviewImageOption.WithCaption(text, img.name, common.BodyTextColor))
 			puzzleImages = append(puzzleImages, &puzzleImage{
-				image:      img.image,
-				name:       img.name,
-				x:          x,
-				y:          y,
-				scale:      baseScale,
-				baseScale:  baseScale,
-				hoverScale: hoverScale,
+				previewImage: previewImage,
+				name:         img.name,
+				x:            x,
+				y:            y,
+				baseScale:    baseScale,
+				hoverScale:   hoverScale,
 			})
 		}
 	}
-
-	text := common.NewTextRenderer(common.RobotoBoldFontName, common.TitleColor, 40, etxt.Center)
 
 	buttonY := screenHeight - 120.0
 
@@ -129,7 +132,8 @@ func NewHomeScene(gameImage *common.GameImage) *HomeScene {
 			common.ButtonOption.WithHoverColor(common.PrimaryHoverColor),
 			common.ButtonOption.WithShadowColor(common.ShadowColor),
 		),
-		text: text,
+		text:        text,
+		startDialog: newStartGameDialog(),
 	}
 }
 
@@ -145,14 +149,26 @@ func (h *HomeScene) Update(context *common.SceneContext) error {
 		}
 
 		if img != nil {
-			h.gameImage.SetImage(name, img)
-			context.SceneManager.SetScene("Game")
-			return nil
+			h.startDialog.Open(img, name)
 		}
 	}
 
+	if h.startDialog.IsOpen() {
+		h.startDialog.Update()
+		if h.startDialog.startClicked() {
+			h.gameImage.SetPieceCount(h.startDialog.PieceCount())
+			h.gameImage.SetImage(h.startDialog.ImageName(), h.startDialog.PreviewImage())
+			context.SceneManager.SetScene("Game")
+			return nil
+		}
+		if h.startDialog.cancelClicked() {
+			h.startDialog.Close()
+		}
+		return nil
+	}
+
 	for _, img := range h.images {
-		if isPointInImage(float64(mx), float64(my), img) {
+		if img.previewImage.IsPointInImage(float64(mx), float64(my)) {
 			img.hovered = true
 		} else {
 			img.hovered = false
@@ -161,9 +177,8 @@ func (h *HomeScene) Update(context *common.SceneContext) error {
 
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		for _, img := range h.images {
-			if isPointInImage(float64(mx), float64(my), img) {
-				h.gameImage.SetImage(img.name, img.image)
-				context.SceneManager.SetScene("Game")
+			if img.previewImage.IsPointInImage(float64(mx), float64(my)) {
+				h.startDialog.Open(img.previewImage.Image, img.name)
 			}
 		}
 	}
@@ -197,42 +212,16 @@ func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 			targetScale = img.hoverScale
 			isHovered = true
 		}
-		img.scale += (targetScale - img.scale) * 0.15
-
-		imgW := float64(img.image.Bounds().Dx())
-		imgH := float64(img.image.Bounds().Dy())
-		scaledW := imgW * img.scale
-		scaledH := imgH * img.scale
-
-		// Draw card background (centered)
-		cardX := float32(img.x - scaledW/2)
-		cardY := float32(img.y - scaledH/2)
-		cardWidth := float32(scaledW)
-		cardHeight := float32(scaledH)
-
-		// Card shadow
-		common.DrawSoftShadow(screen, cardX, cardY, cardWidth, cardHeight,
-			color.RGBA{0, 0, 0, 80}, 4, 4)
+		img.previewImage.Scale += (targetScale - img.previewImage.Scale) * 0.15
 
 		// Card background
 		cardColor := common.SurfaceColor
 		if img.hovered {
 			cardColor = common.SurfaceHoverColor
 		}
-		common.DrawPanel(screen, cardX-5, cardY-5, cardWidth+10, cardHeight+10, cardColor, true, common.PrimaryColor)
 
-		// Draw image (centered transform to prevent hover overlap)
-		geoM := ebiten.GeoM{}
-		geoM.Scale(img.scale, img.scale)
-		geoM.Translate(img.x-imgW*img.scale/2, img.y-imgH*img.scale/2)
-		opt := &ebiten.DrawImageOptions{GeoM: geoM, Filter: ebiten.FilterLinear}
-		screen.DrawImage(img.image, opt)
-
-		// Image name caption
-		h.text.SetColor(common.BodyTextColor)
-		h.text.SetSize(14)
-		h.text.SetAlign(etxt.Center)
-		h.text.Draw(screen, img.name, int(img.x), int(img.y+scaledH/2)+20)
+		img.previewImage.BGColor = cardColor
+		img.previewImage.Draw(screen)
 	}
 
 	// Cursor update
@@ -245,7 +234,7 @@ func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 	// Upload section - position "OR" text between images and button
 	if len(h.images) > 0 {
 		lastImg := h.images[len(h.images)-1]
-		imgH := float64(lastImg.image.Bounds().Dy()) * lastImg.scale
+		imgH := float64(lastImg.previewImage.Image.Bounds().Dy()) * lastImg.previewImage.Scale
 		orY := int(lastImg.y + imgH/2 + 60)
 		h.text.SetColor(common.MutedTextColor)
 		h.text.SetSize(18)
@@ -257,26 +246,8 @@ func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 	}
 
 	h.uploadButton.Draw(screen)
-}
 
-func isPointInImage(x, y float64, puzzleImage *puzzleImage) bool {
-	imgW := float64(puzzleImage.image.Bounds().Dx())
-	imgH := float64(puzzleImage.image.Bounds().Dy())
-
-	geoM := ebiten.GeoM{}
-	geoM.Scale(puzzleImage.scale, puzzleImage.scale)
-	geoM.Translate(puzzleImage.x-imgW*puzzleImage.scale/2, puzzleImage.y-imgH*puzzleImage.scale/2)
-
-	if !geoM.IsInvertible() {
-		return false
-	}
-
-	geoM.Invert()
-
-	imgX, imgY := geoM.Apply(x, y)
-
-	w, h := puzzleImage.image.Bounds().Dx(), puzzleImage.image.Bounds().Dy()
-	return imgX >= 0 && imgX < float64(w) && imgY >= 0 && imgY < float64(h)
+	h.startDialog.Draw(screen)
 }
 
 func loadImageFromDesktop() (string, *ebiten.Image, error) {

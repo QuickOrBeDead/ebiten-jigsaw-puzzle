@@ -26,6 +26,7 @@ type GameScene struct {
 	image             *ebiten.Image
 	showGhost         bool
 	showImage         bool
+	previewImage      *common.PreviewImage
 
 	text *common.TextRenderer
 }
@@ -39,10 +40,24 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 		common.ButtonOption.WithFontSize(18),
 	}
 
+	margin := 10.
+	const footerHeight = 56
+	image := gameImage.GetImage()
+
+	previewImage := common.NewPreviewImage(
+		image,
+		margin,
+		0,
+		0.5,
+		common.PreviewImageOption.WithBGColor(color.Black),
+		common.PreviewImageOption.WithBorderColor(common.PrimaryColor))
+
+	previewImage.Y = float64(common.ScreenHeight) - float64(previewImage.ScaledH) - float64(footerHeight) - margin
+
 	s := &GameScene{
 		text:              text,
 		headerHeight:      64,
-		footerHeight:      56,
+		footerHeight:      footerHeight,
 		pictureName:       gameImage.GetName(),
 		startTime:         time.Now().Unix(),
 		endTime:           0,
@@ -50,7 +65,8 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 		showGhost:         false,
 		showImage:         false,
 		isPuzzleCompleted: false,
-		image:             gameImage.GetImage(),
+		image:             image,
+		previewImage:      previewImage,
 		headerButtons: []*common.Button{
 			common.NewButton(
 				1025, 12,
@@ -92,7 +108,7 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 	}
 
 	pp := puzzle.NewPuzzlePicture(s.image)
-	s.puzzle = pp.CreatePuzzle(60)
+	s.puzzle = pp.CreatePuzzle(gameImage.GetPieceCount())
 
 	return s
 }
@@ -232,7 +248,7 @@ func (g *GameScene) drawFooter(screen *ebiten.Image) {
 	g.text.SetAlign(etxt.Right)
 	g.text.Draw(
 		screen,
-		fmt.Sprintf("Moves: %d  |  Time: %s", g.moves, g.getElapsedTime()),
+		fmt.Sprintf("Pieces: %d  |  Moves: %d  |  Time: %s", g.puzzle.PieceCount, g.moves, g.getElapsedTime()),
 		int(float32(common.ScreenWidth)-20),
 		int(footerY+g.footerHeight/2),
 	)
@@ -242,22 +258,7 @@ func (g *GameScene) drawFooter(screen *ebiten.Image) {
 	}
 
 	if g.showImage {
-		scale := 0.5
-		margin := 10.
-		opt := &ebiten.DrawImageOptions{}
-
-		opt.GeoM.Scale(scale, scale)
-		opt.GeoM.Translate(
-			margin,
-			float64(common.ScreenHeight)-float64(g.image.Bounds().Dy())*scale-float64(g.footerHeight)-margin,
-		)
-
-		common.DrawPanel(screen,
-			float32(margin-2), float32(common.ScreenHeight)-float32(g.image.Bounds().Dy())*float32(scale)-g.footerHeight-2,
-			float32(g.image.Bounds().Dx())*float32(scale)+4, float32(g.image.Bounds().Dy())*float32(scale)+4,
-			color.RGBA{0, 0, 0, 0}, true, common.PrimaryColor)
-
-		screen.DrawImage(g.image, opt)
+		g.previewImage.Draw(screen)
 	}
 }
 
