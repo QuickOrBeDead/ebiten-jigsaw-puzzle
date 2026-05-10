@@ -10,6 +10,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/sqweek/dialog"
 	"github.com/tinne26/etxt"
 
@@ -64,7 +65,7 @@ func NewHomeScene(gameImage *common.GameImage) *HomeScene {
 
 		numRows := (numImages + numCols - 1) / numCols
 
-		topMargin := 160.0
+		topMargin := 120.0
 		bottomMargin := 200.0
 		leftMargin := 60.0
 		rightMargin := 60.0
@@ -191,17 +192,27 @@ func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 	screen.Fill(common.BackgroundColor)
 
 	// Header area
-	common.DrawPanel(screen, 0, 0, float32(common.ScreenWidth), 120, common.HeaderColor, false, nil)
+	const headerH float32 = 120
+	common.DrawPanel(screen, 0, 0, float32(common.ScreenWidth), headerH, common.HeaderColor, false, nil)
+
+	vector.FillRect(screen, 0, 0, float32(common.ScreenWidth), 1, color.RGBA{255, 255, 255, 14}, false)
+
+	common.DrawPanel(screen, 0, headerH-3, float32(common.ScreenWidth), 3, common.PrimaryColor, false, nil)
+
+	for i := 0; i < 4; i++ {
+		alpha := uint8(35 - 7*i)
+		vector.FillRect(screen, 0, headerH+float32(i), float32(common.ScreenWidth), 1, color.RGBA{0, 0, 0, alpha}, false)
+	}
 
 	// Title with shadow
-	h.text.SetColor(common.SuccessColor)
+	h.text.SetColor(common.TitleColor)
 	h.text.SetSize(42)
-	h.text.DrawWithShadow(screen, "Welcome to Jigsaw Puzzle!", common.ScreenWidth/2, 50, color.RGBA{0, 0, 0, 100}, 2, 2)
+	h.text.DrawEmbossedAutoWithShadow(screen, "Welcome to Jigsaw Puzzle!", common.ScreenWidth/2, 50, color.RGBA{0, 0, 0, 100}, 2, 2)
 
 	// Subtitle
 	h.text.SetColor(common.MutedTextColor)
 	h.text.SetSize(20)
-	h.text.DrawHorizontalCenter(screen, "Select a puzzle image", 100)
+	h.text.DrawEmbossedHozCenterWithShadow(screen, "Select a puzzle image", 100, color.RGBA{0, 0, 0, 80}, 1, 1)
 
 	// Draw image cards
 	isHovered := false
@@ -234,15 +245,15 @@ func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 	// Upload section - position "OR" text between images and button
 	if len(h.images) > 0 {
 		lastImg := h.images[len(h.images)-1]
-		imgH := float64(lastImg.previewImage.Image.Bounds().Dy()) * lastImg.previewImage.Scale
-		orY := int(lastImg.y + imgH/2 + 60)
+		imgH := float64(lastImg.previewImage.ScaledH)
+		orY := int(lastImg.y + imgH + 70)
 		h.text.SetColor(common.MutedTextColor)
 		h.text.SetSize(18)
-		h.text.DrawHorizontalCenter(screen, "OR", orY)
+		h.text.DrawEmbossedHozCenterWithShadow(screen, "OR", orY, color.RGBA{0, 0, 0, 80}, 1, 1)
 	} else {
 		h.text.SetColor(common.MutedTextColor)
 		h.text.SetSize(18)
-		h.text.DrawHorizontalCenter(screen, "OR", 300)
+		h.text.DrawEmbossedHozCenterWithShadow(screen, "OR", 300, color.RGBA{0, 0, 0, 80}, 1, 1)
 	}
 
 	h.uploadButton.Draw(screen)

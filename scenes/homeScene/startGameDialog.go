@@ -145,14 +145,14 @@ func (d *startGameDialog) Draw(screen *ebiten.Image) {
 	d.text.SetColor(common.TitleColor)
 	d.text.SetSize(26)
 	d.text.SetAlign(etxt.Center)
-	d.text.DrawHorizontalCenter(screen, "Choose Piece Count", int(d.panelY)+30)
+	d.text.DrawEmbossedHozCenterWithShadow(screen, "Choose Piece Count", int(d.panelY)+30, color.RGBA{0, 0, 0, 80}, 1, 1)
 
 	d.drawPreview(screen)
 
 	d.text.SetColor(common.BodyTextColor)
 	d.text.SetSize(22)
 	d.text.SetAlign(etxt.Center)
-	d.text.DrawHorizontalCenter(screen, fmt.Sprintf("%d pieces", d.slider.Value), int(d.panelY)+195)
+	d.text.DrawEmbossedHozCenterWithShadow(screen, fmt.Sprintf("%d pieces", d.slider.Value), int(d.panelY)+195, color.RGBA{0, 0, 0, 80}, 1, 1)
 
 	d.slider.Draw(screen)
 	d.startButton.Draw(screen)

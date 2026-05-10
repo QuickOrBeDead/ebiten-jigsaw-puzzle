@@ -111,6 +111,59 @@ func (t *TextRenderer) SetFont(fontName string) {
 	t.font = getFont(fontName)
 }
 
+// DrawEmbossedAutoWithShadow draws 3D embossed text with a drop shadow to ground it
+func (t *TextRenderer) DrawEmbossedAutoWithShadow(target *ebiten.Image, text string, x, y int, dropColor color.Color, dropOffX, dropOffY int) {
+	r, g, b, a := t.color.RGBA()
+	fc := color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
+	highlight := lighterColor(fc, 0.7)
+	shadow := darkerColor(fc, 0.5)
+
+	t.renderer.SetFont(t.font)
+	t.renderer.SetSize(t.size)
+	t.renderer.SetAlign(t.align)
+	t.renderer.SetColor(dropColor)
+	t.renderer.Draw(target, text, x+dropOffX, y+dropOffY)
+
+	t.DrawEmbossed(target, text, x, y, highlight, shadow)
+}
+
+// DrawEmbossedHozCenterWithShadow draws horizontally centered 3D embossed text with a drop shadow
+func (t *TextRenderer) DrawEmbossedHozCenterWithShadow(target *ebiten.Image, text string, y int, dropColor color.Color, dropOffX, dropOffY int) {
+	t.SetAlign(etxt.HorzCenter)
+	t.DrawEmbossedAutoWithShadow(target, text, target.Bounds().Dx()/2, y, dropColor, dropOffX, dropOffY)
+}
+
+// DrawEmbossed draws text with a 3D embossed effect: highlight top-left, shadow bottom-right
+func (t *TextRenderer) DrawEmbossed(target *ebiten.Image, text string, x, y int, highlightColor, shadowColor color.Color) {
+	t.renderer.SetFont(t.font)
+	t.renderer.SetSize(t.size)
+	t.renderer.SetAlign(t.align)
+
+	t.renderer.SetColor(highlightColor)
+	t.renderer.Draw(target, text, x-1, y-1)
+
+	t.renderer.SetColor(shadowColor)
+	t.renderer.Draw(target, text, x+1, y+1)
+
+	t.renderer.SetColor(t.color)
+	t.renderer.Draw(target, text, x, y)
+}
+
+// DrawEmbossedAuto draws 3D embossed text, auto-computing highlight/shadow from the text color
+func (t *TextRenderer) DrawEmbossedAuto(target *ebiten.Image, text string, x, y int) {
+	r, g, b, a := t.color.RGBA()
+	fc := color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
+	highlight := lighterColor(fc, 0.7)
+	shadow := darkerColor(fc, 0.5)
+	t.DrawEmbossed(target, text, x, y, highlight, shadow)
+}
+
+// DrawEmbossedHorizontalCenter draws horizontally centered 3D embossed text
+func (t *TextRenderer) DrawEmbossedHorizontalCenter(target *ebiten.Image, text string, y int) {
+	t.SetAlign(etxt.HorzCenter)
+	t.DrawEmbossedAuto(target, text, target.Bounds().Dx()/2, y)
+}
+
 // DrawWithShadow draws text with a shadow effect
 func (t *TextRenderer) DrawWithShadow(target *ebiten.Image, text string, x, y int, shadowColor color.Color, offsetX, offsetY int) {
 	t.renderer.SetFont(t.font)

@@ -103,7 +103,7 @@ func (p *PreviewImage) Draw(screen *ebiten.Image) {
 		p.text.SetColor(p.captionColor)
 		p.text.SetSize(14)
 		p.text.SetAlign(etxt.Center)
-		p.text.Draw(screen, p.captionText, int(p.X+float64(p.ScaledW)/2), int(p.Y+float64(p.ScaledH))+20)
+		p.text.DrawEmbossedAutoWithShadow(screen, p.captionText, int(p.X+float64(p.ScaledW)/2), int(p.Y+float64(p.ScaledH))+20, color.RGBA{0, 0, 0, 80}, 1, 1)
 	}
 }
 

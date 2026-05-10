@@ -9,6 +9,7 @@ import (
 	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/puzzle"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/tinne26/etxt"
 )
 
@@ -243,14 +244,23 @@ func (g *GameScene) renderFrame(dst *ebiten.Image) {
 }
 
 func (g *GameScene) drawHeader(screen *ebiten.Image) {
-	common.DrawPanel(screen, 0, 0, float32(common.ScreenWidth), g.headerHeight, common.HeaderColor, false, nil)
+	h := g.headerHeight
 
-	common.DrawPanel(screen, 0, g.headerHeight-2, float32(common.ScreenWidth), 2, common.PrimaryColor, false, nil)
+	common.DrawPanel(screen, 0, 0, float32(common.ScreenWidth), h, common.HeaderColor, false, nil)
+
+	vector.FillRect(screen, 0, 0, float32(common.ScreenWidth), 1, color.RGBA{255, 255, 255, 14}, false)
+
+	common.DrawPanel(screen, 0, h-3, float32(common.ScreenWidth), 3, common.PrimaryColor, false, nil)
+
+	for i := 0; i < 4; i++ {
+		alpha := uint8(35 - 7*i)
+		vector.FillRect(screen, 0, h+float32(i), float32(common.ScreenWidth), 1, color.RGBA{0, 0, 0, alpha}, false)
+	}
 
 	g.text.SetColor(common.TitleColor)
 	g.text.SetSize(32)
 	g.text.SetAlign(etxt.Left)
-	g.text.DrawWithShadow(screen, fmt.Sprintf("Jigsaw Puzzle - %s", g.pictureName), 32, 32, color.RGBA{0, 0, 0, 100}, 1, 1)
+	g.text.DrawEmbossedAutoWithShadow(screen, fmt.Sprintf("Jigsaw Puzzle - %s", g.pictureName), 32, 32, color.RGBA{0, 0, 0, 100}, 1, 1)
 
 	for _, button := range g.headerButtons {
 		button.Draw(screen)
@@ -259,10 +269,16 @@ func (g *GameScene) drawHeader(screen *ebiten.Image) {
 
 func (g *GameScene) drawFooter(screen *ebiten.Image) {
 	footerY := float32(common.ScreenHeight) - g.footerHeight
+	h := g.footerHeight
 
-	common.DrawPanel(screen, 0, footerY, float32(common.ScreenWidth), g.footerHeight, common.FooterColor, false, nil)
+	common.DrawPanel(screen, 0, footerY, float32(common.ScreenWidth), h, common.FooterColor, false, nil)
 
-	common.DrawPanel(screen, 0, footerY, float32(common.ScreenWidth), 2, common.PrimaryColor, false, nil)
+	vector.FillRect(screen, 0, footerY, float32(common.ScreenWidth), 3, common.PrimaryColor, false)
+
+	for i := 0; i < 4; i++ {
+		alpha := uint8(35 - 7*i)
+		vector.FillRect(screen, 0, footerY-float32(i+1), float32(common.ScreenWidth), 1, color.RGBA{0, 0, 0, alpha}, false)
+	}
 
 	// Progress bar in the center
 	progress := float32(g.puzzle.GetCompletePercentage()) / 100.0
@@ -277,11 +293,12 @@ func (g *GameScene) drawFooter(screen *ebiten.Image) {
 	g.text.SetColor(color.RGBA{255, 255, 255, 255})
 	g.text.SetSize(14)
 	g.text.SetAlign(etxt.Center)
-	g.text.Draw(
+	g.text.DrawEmbossedAutoWithShadow(
 		screen,
 		fmt.Sprintf("%d%%", g.puzzle.GetCompletePercentage()),
 		int(barX+barWidth/2),
 		int(barY+barHeight/2),
+		color.RGBA{0, 0, 0, 80}, 1, 1,
 	)
 
 	// Draw footer buttons - centered vertically
@@ -294,11 +311,12 @@ func (g *GameScene) drawFooter(screen *ebiten.Image) {
 	g.text.SetColor(common.BodyTextColor)
 	g.text.SetSize(18)
 	g.text.SetAlign(etxt.Right)
-	g.text.Draw(
+	g.text.DrawEmbossedAutoWithShadow(
 		screen,
 		fmt.Sprintf("Pieces: %d  |  Moves: %d  |  Time: %s", g.puzzle.PieceCount, g.moves, g.getElapsedTime()),
 		int(float32(common.ScreenWidth)-20),
 		int(footerY+g.footerHeight/2),
+		color.RGBA{0, 0, 0, 80}, 1, 1,
 	)
 
 	if g.isPuzzleCompleted {
@@ -320,12 +338,12 @@ func (g *GameScene) drawCompletionBanner(screen *ebiten.Image) {
 	g.text.SetColor(common.SuccessColor)
 	g.text.SetSize(36)
 	g.text.SetAlign(etxt.Center)
-	g.text.DrawHorizontalCenter(screen, "Puzzle Completed!", int(bannerY)+40)
+	g.text.DrawEmbossedHozCenterWithShadow(screen, "Puzzle Completed!", int(bannerY)+40, color.RGBA{0, 0, 0, 100}, 2, 2)
 
 	elapsed := g.getElapsedTime()
 	g.text.SetColor(common.BodyTextColor)
 	g.text.SetSize(20)
-	g.text.DrawHorizontalCenter(screen, fmt.Sprintf("Time: %s  |  Moves: %d", elapsed, g.moves), int(bannerY)+75)
+	g.text.DrawEmbossedHozCenterWithShadow(screen, fmt.Sprintf("Time: %s  |  Moves: %d", elapsed, g.moves), int(bannerY)+75, color.RGBA{0, 0, 0, 80}, 1, 1)
 }
 
 func formatDuration(elapsed int64) string {

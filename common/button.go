@@ -84,31 +84,31 @@ func (ButtonOptionBuilder) WithIcon(icon *ebiten.Image) ButtonOptFunc {
 }
 
 type Button struct {
-	X           float32
-	Y           float32
-	Width       float32
-	Height      float32
-	Label       string
-	Color       color.RGBA
-	HoverColor  color.RGBA
-	ActiveColor color.RGBA
-	ShadowColor color.RGBA
-	Pressed     bool
-	Hovered     bool
-	Clicked     bool
-	OnClick     func()
-	FontSize    float64
-	FontColor   color.Color
-	FontName    string
-	IsToggle    bool
-	IsActive    bool
-	BorderColor color.RGBA
-	BorderWidth float32
-	Icon        *ebiten.Image
-	CornerRadius float32
-	text        *TextRenderer
-	path        *vector.Path
-	hitMask     *image.Alpha
+	X              float32
+	Y              float32
+	Width          float32
+	Height         float32
+	Label          string
+	Color          color.RGBA
+	HoverColor     color.RGBA
+	ActiveColor    color.RGBA
+	ShadowColor    color.RGBA
+	Pressed        bool
+	Hovered        bool
+	Clicked        bool
+	OnClick        func()
+	FontSize       float64
+	FontColor      color.Color
+	FontName       string
+	IsToggle       bool
+	IsActive       bool
+	BorderColor    color.RGBA
+	BorderWidth    float32
+	Icon           *ebiten.Image
+	CornerRadius   float32
+	text           *TextRenderer
+	path           *vector.Path
+	hitMask        *image.Alpha
 	hoverProgress  float32
 	activeProgress float32
 }
@@ -120,22 +120,22 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 	cornerRadius := height / 2
 
 	btn := &Button{
-		X:            x,
-		Y:            y,
-		Width:        width,
-		Height:       height,
-		Label:        label,
-		Color:        color.RGBA{R: 54, G: 153, B: 255, A: 255},
-		HoverColor:   color.RGBA{R: 72, G: 176, B: 255, A: 255},
-		ActiveColor:  color.RGBA{R: 40, G: 130, B: 240, A: 255},
-		ShadowColor:  color.RGBA{R: 0, G: 0, B: 0, A: 50},
-		FontName:     fontName,
-		FontSize:     fontSize,
-		FontColor:    fontColor,
-		CornerRadius: cornerRadius,
-		BorderWidth:  0,
-		IsToggle:     false,
-		IsActive:     false,
+		X:              x,
+		Y:              y,
+		Width:          width,
+		Height:         height,
+		Label:          label,
+		Color:          color.RGBA{R: 54, G: 153, B: 255, A: 255},
+		HoverColor:     color.RGBA{R: 72, G: 176, B: 255, A: 255},
+		ActiveColor:    color.RGBA{R: 40, G: 130, B: 240, A: 255},
+		ShadowColor:    color.RGBA{R: 0, G: 0, B: 0, A: 50},
+		FontName:       fontName,
+		FontSize:       fontSize,
+		FontColor:      fontColor,
+		CornerRadius:   cornerRadius,
+		BorderWidth:    0,
+		IsToggle:       false,
+		IsActive:       false,
 		hoverProgress:  0,
 		activeProgress: 0,
 	}
@@ -174,25 +174,16 @@ func (b *Button) Draw(screen *ebiten.Image) {
 	a := float32(baseColor.A) + (float32(hoverColor.A)-float32(baseColor.A))*b.hoverProgress
 	currentColor := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(bl), A: uint8(a)}
 
-	if b.Pressed {
-		currentColor = color.RGBA{
-			R: uint8(float32(currentColor.R) * 0.85),
-			G: uint8(float32(currentColor.G) * 0.85),
-			B: uint8(float32(currentColor.B) * 0.85),
-			A: currentColor.A,
-		}
-	}
-
 	b.drawShadow(screen)
-	b.drawBackground(screen, currentColor, 0, 0)
+	drawButtonBevel(screen, b.X, b.Y, b.Width, b.Height, b.CornerRadius, currentColor, b.Pressed, DefaultButtonShaderConfig)
 
 	if b.BorderWidth > 0 {
-		StrokePathWithColor(screen, b.path, b.X, b.Y, b.BorderWidth, b.BorderColor, false)
+		StrokePathWithColor(screen, b.path, b.X, b.Y, b.BorderWidth, b.BorderColor, true)
 	}
 
 	if b.IsToggle && b.IsActive {
 		highlightColor := color.RGBA{R: 100, G: 200, B: 255, A: 100}
-		StrokePathWithColor(screen, b.path, b.X, b.Y, 2, highlightColor, false)
+		StrokePathWithColor(screen, b.path, b.X, b.Y, 2, highlightColor, true)
 	}
 
 	b.drawText(screen)
@@ -263,36 +254,63 @@ func (b *Button) isHovered() bool {
 }
 
 func (b *Button) drawShadow(screen *ebiten.Image) {
-	maxOffset := 4
-	baseAlpha := 40.0
+	maxOffset := 5
+	baseAlpha := 35.0
 
 	if b.Hovered {
-		maxOffset = 5
-		baseAlpha = 50
+		maxOffset = 7
+		baseAlpha = 45
+	}
+
+	if b.Pressed {
+		maxOffset = 2
+		baseAlpha = 15
 	}
 
 	for i := 1; i <= maxOffset; i++ {
 		alpha := uint8(baseAlpha / (1.0 + float64(i)/float64(maxOffset)))
 		offset := float32(i)
 		shadowColor := color.RGBA{b.ShadowColor.R, b.ShadowColor.G, b.ShadowColor.B, alpha}
-		StrokePathWithColor(screen, b.path, b.X+offset, b.Y+offset, 2, shadowColor, false)
+		StrokePathWithColor(screen, b.path, b.X+offset, b.Y+offset, 2, shadowColor, true)
 	}
 }
 
 func (b *Button) drawBackground(screen *ebiten.Image, bColor color.Color, offsetX, offsetY float32) {
-	FillPathWithColor(screen, b.path, b.X+offsetX, b.Y+offsetY, bColor, false)
+	FillPathWithColor(screen, b.path, b.X+offsetX, b.Y+offsetY, bColor, true)
 }
 
 func (b *Button) drawText(screen *ebiten.Image) {
 	textX, textY := b.getCenter()
+	if b.Pressed {
+		textY += 2
+	}
 	b.text.SetFont(b.FontName)
 	b.text.SetSize(b.FontSize)
-	b.text.SetColor(b.FontColor)
 	b.text.SetAlign(etxt.Center)
-	b.text.Draw(screen, b.Label, textX, textY)
+
+	b.text.SetColor(b.FontColor)
+	b.text.DrawEmbossedAutoWithShadow(screen, b.Label, textX, textY, color.RGBA{0, 0, 0, 70}, 1, 1)
 }
 
 func (b *Button) getCenter() (int, int) {
 	r := int(b.CornerRadius)
 	return int(b.X) + int(b.Width/2) + r, int(b.Y) + int(b.Height/2)
+}
+
+func lighterColor(c color.RGBA, factor float32) color.RGBA {
+	return color.RGBA{
+		R: uint8(math.Min(255, float64(c.R)+(255-float64(c.R))*float64(factor))),
+		G: uint8(math.Min(255, float64(c.G)+(255-float64(c.G))*float64(factor))),
+		B: uint8(math.Min(255, float64(c.B)+(255-float64(c.B))*float64(factor))),
+		A: c.A,
+	}
+}
+
+func darkerColor(c color.RGBA, factor float32) color.RGBA {
+	return color.RGBA{
+		R: uint8(float32(c.R) * (1 - factor)),
+		G: uint8(float32(c.G) * (1 - factor)),
+		B: uint8(float32(c.B) * (1 - factor)),
+		A: c.A,
+	}
 }
