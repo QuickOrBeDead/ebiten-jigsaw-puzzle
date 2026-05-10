@@ -77,6 +77,10 @@ func (g *PieceGroup) cacheShadow() {
 	shadowPadding := 10
 	bx, by, bw, bh := g.Bounds()
 	g.boundsX, g.boundsY = bx, by
+	if g.shadowImage != nil {
+		g.shadowImage.Deallocate()
+	}
+
 	g.shadowImage = ebiten.NewImage(bw+shadowPadding*2, bh+shadowPadding*2)
 	common.DrawShadowForPath(g.shadowImage, float64(-bx+shadowPadding), float64(-by+shadowPadding), g.path)
 }

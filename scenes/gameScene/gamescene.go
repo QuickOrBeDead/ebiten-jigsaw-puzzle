@@ -88,20 +88,11 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 					common.ButtonOption.WithFontSize(16),
 				)...,
 			),
-			common.NewButton(
-				260, 0,
-				80, 36,
-				"Arrange",
-				append(buttonOptions,
-					common.ButtonOption.WithColor(common.SurfaceColor),
-					common.ButtonOption.WithFontSize(16),
-				)...,
-			),
 		},
 	}
 
 	pp := puzzle.NewPuzzlePicture(s.image)
-	s.puzzle = pp.CreatePuzzle(24)
+	s.puzzle = pp.CreatePuzzle(60)
 
 	return s
 }
