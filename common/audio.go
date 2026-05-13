@@ -35,11 +35,11 @@ type audioManager struct {
 func NewAudioManager() *audioManager {
 	s := GetSettings()
 	am := &audioManager{
-		context:     audio.NewContext(audioSampleRate),
-		sfxVolume:   s.SFXVolume,
-		musicVolume: s.MusicVolume,
-		soundData:   make(map[Sound][]byte),
+		context:   audio.NewContext(audioSampleRate),
+		sfxVolume: s.SFXVolume,
+		soundData: make(map[Sound][]byte),
 	}
+	am.SetMusicVolume(s.MusicVolume)
 	am.loadSounds()
 	return am
 }
@@ -99,9 +99,9 @@ func (am *audioManager) SetMusicVolume(v float64) {
 	if v > 1 {
 		v = 1
 	}
-	am.musicVolume = v
+	am.musicVolume = v / 15
 	if am.musicPlayer != nil {
-		am.musicPlayer.SetVolume(v)
+		am.musicPlayer.SetVolume(am.musicVolume)
 	}
 }
 
@@ -170,7 +170,7 @@ func (am *audioManager) StartMusic(data []byte) {
 	}
 
 	loop := audio.NewInfiniteLoopF32(stream, length)
-	player, err := am.context.NewPlayer(loop)
+	player, err := am.context.NewPlayerF32(loop)
 	if err != nil {
 		return
 	}
@@ -186,4 +186,9 @@ func (am *audioManager) StopMusic() {
 	}
 }
 
-
+func (am *audioManager) StartMusicFromFile(name string) {
+	data := loadAudioFile(name)
+	if len(data) > 0 {
+		am.StartMusic(data)
+	}
+}
