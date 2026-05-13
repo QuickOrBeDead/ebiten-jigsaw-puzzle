@@ -83,6 +83,12 @@ func (ButtonOptionBuilder) WithIcon(icon *ebiten.Image) ButtonOptFunc {
 	}
 }
 
+func (ButtonOptionBuilder) WithOnClick(onClickFunc func()) ButtonOptFunc {
+	return func(b *Button) {
+		b.OnClick = onClickFunc
+	}
+}
+
 type Button struct {
 	X              float32
 	Y              float32
@@ -95,6 +101,7 @@ type Button struct {
 	ShadowColor    color.RGBA
 	Pressed        bool
 	Hovered        bool
+	HoverCursor    ebiten.CursorShapeType
 	Clicked        bool
 	OnClick        func()
 	FontSize       float64
@@ -125,6 +132,7 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 		Width:          width,
 		Height:         height,
 		Label:          label,
+		HoverCursor:    ebiten.CursorShapePointer,
 		Color:          color.RGBA{R: 54, G: 153, B: 255, A: 255},
 		HoverColor:     color.RGBA{R: 72, G: 176, B: 255, A: 255},
 		ActiveColor:    color.RGBA{R: 40, G: 130, B: 240, A: 255},
@@ -202,10 +210,14 @@ func (b *Button) Draw(screen *ebiten.Image) {
 	}
 }
 
-func (b *Button) Update() {
+func (b *Button) Update(context *SceneContext) {
 	b.Clicked = false
 	b.Hovered = b.isHovered()
 	b.updateHoverAnimation()
+
+	if b.Hovered {
+		context.Cursor = b.HoverCursor
+	}
 
 	pressed := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
 	if pressed && b.Hovered {

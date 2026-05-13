@@ -46,7 +46,7 @@ func newLine(kind creditLineType, text string) creditLine {
 	return creditLine{kind: kind, text: text}
 }
 
-func NewCreditsScene() *CreditsScene {
+func NewCreditsScene(context *common.SceneContext) *CreditsScene {
 	lines := []creditLine{
 		newLine(creditTitle, "Jigsaw Puzzle"),
 		newLine(creditBlank, ""),
@@ -93,6 +93,9 @@ func NewCreditsScene() *CreditsScene {
 			common.ButtonOption.WithFontColor(common.BodyTextColor),
 			common.ButtonOption.WithColor(common.HeaderButtonColor),
 			common.ButtonOption.WithHoverColor(common.HeaderButtonHoverColor),
+			common.ButtonOption.WithOnClick(func() {
+				context.SceneManager.SetScene("home")
+			}),
 		),
 	}
 }
@@ -128,11 +131,7 @@ func (s *CreditsScene) thumbSize() (float64, float64) {
 }
 
 func (s *CreditsScene) Update(context *common.SceneContext) error {
-	s.backBtn.Update()
-	if s.backBtn.Clicked {
-		context.SceneManager.SetScene("home")
-		return nil
-	}
+	s.backBtn.Update(context)
 
 	_, wy := ebiten.Wheel()
 	if wy != 0 {
@@ -176,7 +175,6 @@ func (s *CreditsScene) Update(context *common.SceneContext) error {
 }
 
 func (s *CreditsScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
-	ebiten.SetCursorShape(ebiten.CursorShapeDefault)
 	screen.Fill(common.BackgroundColor)
 
 	const headerH float32 = 64

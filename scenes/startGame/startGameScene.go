@@ -40,7 +40,7 @@ type StartGameScene struct {
 	backBtn      *common.Button
 }
 
-func NewStartGameScene(gameImage *common.GameImage) *StartGameScene {
+func NewStartGameScene(gameImage *common.GameImage, context *common.SceneContext) *StartGameScene {
 	images, err := loadImages("./pictures")
 	if err != nil {
 		panic(err)
@@ -142,6 +142,9 @@ func NewStartGameScene(gameImage *common.GameImage) *StartGameScene {
 			common.ButtonOption.WithFontColor(common.BodyTextColor),
 			common.ButtonOption.WithColor(common.HeaderButtonColor),
 			common.ButtonOption.WithHoverColor(common.HeaderButtonHoverColor),
+			common.ButtonOption.WithOnClick(func() {
+				context.SceneManager.SetScene("home")
+			}),
 		),
 		text:        text,
 		startDialog: newStartGameDialog(),
@@ -151,13 +154,8 @@ func NewStartGameScene(gameImage *common.GameImage) *StartGameScene {
 func (s *StartGameScene) Update(context *common.SceneContext) error {
 	mx, my := ebiten.CursorPosition()
 
-	s.backBtn.Update()
-	if s.backBtn.Clicked {
-		context.SceneManager.SetScene("home")
-		return nil
-	}
-
-	s.uploadButton.Update()
+	s.backBtn.Update(context)
+	s.uploadButton.Update(context)
 
 	if s.uploadButton.Clicked {
 		name, img, err := loadImageFromDesktop()
@@ -171,7 +169,7 @@ func (s *StartGameScene) Update(context *common.SceneContext) error {
 	}
 
 	if s.startDialog.IsOpen() {
-		s.startDialog.Update()
+		s.startDialog.Update(context)
 		if s.startDialog.startClicked() {
 			s.gameImage.SetPieceCount(s.startDialog.PieceCount())
 			s.gameImage.SetImage(s.startDialog.ImageName(), s.startDialog.PreviewImage())
@@ -187,6 +185,7 @@ func (s *StartGameScene) Update(context *common.SceneContext) error {
 	for _, img := range s.images {
 		if img.previewImage.IsPointInImage(float64(mx), float64(my)) {
 			img.hovered = true
+			context.Cursor = ebiten.CursorShapeCrosshair
 		} else {
 			img.hovered = false
 		}
@@ -224,12 +223,10 @@ func (s *StartGameScene) Draw(screen *ebiten.Image, context *common.SceneContext
 
 	s.backBtn.Draw(screen)
 
-	isHovered := false
 	for _, img := range s.images {
 		targetScale := img.baseScale
 		if img.hovered {
 			targetScale = img.hoverScale
-			isHovered = true
 		}
 		img.previewImage.Scale += (targetScale - img.previewImage.Scale) * 0.15
 
@@ -240,12 +237,6 @@ func (s *StartGameScene) Draw(screen *ebiten.Image, context *common.SceneContext
 
 		img.previewImage.BGColor = cardColor
 		img.previewImage.Draw(screen)
-	}
-
-	if isHovered {
-		ebiten.SetCursorShape(ebiten.CursorShapeCrosshair)
-	} else {
-		ebiten.SetCursorShape(ebiten.CursorShapeDefault)
 	}
 
 	if len(s.images) > 0 {

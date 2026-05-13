@@ -12,16 +12,16 @@ import (
 )
 
 type SettingsScene struct {
-	backBtn       *common.Button
-	title         *common.TextRenderer
-	body          *common.TextRenderer
-	sfxSlider     *common.Slider
-	musicSlider   *common.Slider
-	prevSFXValue  int
+	backBtn        *common.Button
+	title          *common.TextRenderer
+	body           *common.TextRenderer
+	sfxSlider      *common.Slider
+	musicSlider    *common.Slider
+	prevSFXValue   int
 	prevMusicValue int
 }
 
-func NewSettingsScene() *SettingsScene {
+func NewSettingsScene(context *common.SceneContext) *SettingsScene {
 	settings := common.GetSettings()
 	sliderX := float32(common.ScreenWidth-300) / 2
 	sfxSlider := common.NewSlider(sliderX, 140, 300, 40, 0, 100, 1)
@@ -40,6 +40,9 @@ func NewSettingsScene() *SettingsScene {
 			common.ButtonOption.WithFontColor(common.BodyTextColor),
 			common.ButtonOption.WithColor(common.HeaderButtonColor),
 			common.ButtonOption.WithHoverColor(common.HeaderButtonHoverColor),
+			common.ButtonOption.WithOnClick(func() {
+				context.SceneManager.SetScene("home")
+			}),
 		),
 		sfxSlider:      sfxSlider,
 		musicSlider:    musicSlider,
@@ -49,12 +52,7 @@ func NewSettingsScene() *SettingsScene {
 }
 
 func (s *SettingsScene) Update(context *common.SceneContext) error {
-	s.backBtn.Update()
-	if s.backBtn.Clicked {
-		context.SceneManager.SetScene("home")
-		return nil
-	}
-
+	s.backBtn.Update(context)
 	s.sfxSlider.Update()
 	if s.sfxSlider.Value != s.prevSFXValue {
 		s.prevSFXValue = s.sfxSlider.Value

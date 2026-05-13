@@ -13,25 +13,26 @@ type Scene interface {
 
 type SceneContext struct {
 	SceneManager *SceneManager
+	Cursor       ebiten.CursorShapeType
 }
 
 type SceneManager struct {
 	current      Scene
 	sceneContext *SceneContext
-	scenes       map[string]func() Scene
+	scenes       map[string]func(*SceneContext) Scene
 }
 
 func NewSceneManager() *SceneManager {
 	m := &SceneManager{
 		sceneContext: &SceneContext{},
-		scenes:       map[string]func() Scene{},
+		scenes:       map[string]func(*SceneContext) Scene{},
 	}
 
 	m.sceneContext.SceneManager = m
 	return m
 }
 
-func (s *SceneManager) AddScene(name string, newSceneFunc func() Scene) {
+func (s *SceneManager) AddScene(name string, newSceneFunc func(*SceneContext) Scene) {
 	s.scenes[name] = newSceneFunc
 }
 
@@ -41,12 +42,15 @@ func (s *SceneManager) SetScene(name string) {
 		panic(fmt.Sprintf("%s scene not found", name))
 	}
 
-	s.current = newSceneFunc()
+	s.current = newSceneFunc(s.sceneContext)
 }
 
 func (s *SceneManager) Update() error {
 	if s.current != nil {
-		return s.current.Update(s.sceneContext)
+		s.sceneContext.Cursor = ebiten.CursorShapeDefault
+		r := s.current.Update(s.sceneContext)
+		ebiten.SetCursorShape(s.sceneContext.Cursor)
+		return r
 	}
 
 	return nil

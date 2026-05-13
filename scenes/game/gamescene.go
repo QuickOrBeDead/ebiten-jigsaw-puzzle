@@ -160,7 +160,7 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 	}
 
 	for _, button := range g.headerButtons {
-		button.Update()
+		button.Update(context)
 		if button.Clicked {
 			g.frameCacheValid = false
 			switch button.Label {
@@ -173,7 +173,7 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 	}
 
 	for _, button := range g.footerButtons {
-		button.Update()
+		button.Update(context)
 		if button.Clicked {
 			g.frameCacheValid = false
 			switch button.Label {

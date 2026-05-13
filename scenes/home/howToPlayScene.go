@@ -16,7 +16,7 @@ type HowToPlayScene struct {
 	body    *common.TextRenderer
 }
 
-func NewHowToPlayScene() *HowToPlayScene {
+func NewHowToPlayScene(context *common.SceneContext) *HowToPlayScene {
 	return &HowToPlayScene{
 		title: common.NewTextRenderer(common.RobotoBoldFontName, common.TitleColor, 36, etxt.Center),
 		body:  common.NewTextRenderer(common.RobotoRegularFontName, common.BodyTextColor, 24, etxt.Center),
@@ -28,16 +28,15 @@ func NewHowToPlayScene() *HowToPlayScene {
 			common.ButtonOption.WithFontColor(common.BodyTextColor),
 			common.ButtonOption.WithColor(common.HeaderButtonColor),
 			common.ButtonOption.WithHoverColor(common.HeaderButtonHoverColor),
+			common.ButtonOption.WithOnClick(func() {
+				context.SceneManager.SetScene("home")
+			}),
 		),
 	}
 }
 
 func (s *HowToPlayScene) Update(context *common.SceneContext) error {
-	s.backBtn.Update()
-	if s.backBtn.Clicked {
-		context.SceneManager.SetScene("home")
-		return nil
-	}
+	s.backBtn.Update(context)
 	return nil
 }
 

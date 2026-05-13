@@ -119,14 +119,14 @@ func (d *startGameDialog) cancelClicked() bool {
 	return d.cancelButton.Clicked
 }
 
-func (d *startGameDialog) Update() {
+func (d *startGameDialog) Update(context *common.SceneContext) {
 	if !d.open {
 		return
 	}
 
 	d.slider.Update()
-	d.startButton.Update()
-	d.cancelButton.Update()
+	d.startButton.Update(context)
+	d.cancelButton.Update(context)
 }
 
 func (d *startGameDialog) Draw(screen *ebiten.Image) {

@@ -19,12 +19,12 @@ func (g *Game) init() {
 	common.AudioManager.StartMusicFromFile("music")
 
 	gameImage := common.NewGameImage()
-	g.SceneManager.AddScene("home", func() common.Scene { return home.NewHomeScene() })
-	g.SceneManager.AddScene("startGame", func() common.Scene { return startGame.NewStartGameScene(gameImage) })
-	g.SceneManager.AddScene("game", func() common.Scene { return game.NewGameScene(gameImage) })
-	g.SceneManager.AddScene("howToPlay", func() common.Scene { return home.NewHowToPlayScene() })
-	g.SceneManager.AddScene("settings", func() common.Scene { return home.NewSettingsScene() })
-	g.SceneManager.AddScene("credits", func() common.Scene { return home.NewCreditsScene() })
+	g.SceneManager.AddScene("home", func(ctx *common.SceneContext) common.Scene { return home.NewHomeScene(ctx) })
+	g.SceneManager.AddScene("startGame", func(ctx *common.SceneContext) common.Scene { return startGame.NewStartGameScene(gameImage, ctx) })
+	g.SceneManager.AddScene("game", func(ctx *common.SceneContext) common.Scene { return game.NewGameScene(gameImage) })
+	g.SceneManager.AddScene("howToPlay", func(ctx *common.SceneContext) common.Scene { return home.NewHowToPlayScene(ctx) })
+	g.SceneManager.AddScene("settings", func(ctx *common.SceneContext) common.Scene { return home.NewSettingsScene(ctx) })
+	g.SceneManager.AddScene("credits", func(ctx *common.SceneContext) common.Scene { return home.NewCreditsScene(ctx) })
 
 	g.SceneManager.SetScene("home")
 }
