@@ -39,7 +39,7 @@ func newStartGameDialog() *startGameDialog {
 	btnY := panelY + 300
 	btnH := float32(44)
 
-	d := &startGameDialog{
+	return &startGameDialog{
 		panelX: panelX,
 		panelY: panelY,
 		panelW: panelW,
@@ -67,8 +67,6 @@ func newStartGameDialog() *startGameDialog {
 		),
 		text: common.NewTextRenderer(common.RobotoBoldFontName, common.BodyTextColor, 24, etxt.Center),
 	}
-
-	return d
 }
 
 func (d *startGameDialog) Open(img *ebiten.Image, name string) {

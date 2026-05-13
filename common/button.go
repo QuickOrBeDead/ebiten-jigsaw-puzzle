@@ -218,6 +218,9 @@ func (b *Button) Update() {
 				b.IsActive = !b.IsActive
 			}
 			b.Clicked = true
+			if AudioManager != nil {
+				AudioManager.PlayClick()
+			}
 			if b.OnClick != nil {
 				b.OnClick()
 			}

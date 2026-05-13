@@ -15,6 +15,7 @@ type HomeScene struct {
 	howToPlayBtn  *common.Button
 	settingsBtn   *common.Button
 	creditsBtn    *common.Button
+	quitBtn       *common.Button
 	text          *common.TextRenderer
 }
 
@@ -66,6 +67,12 @@ func NewHomeScene() *HomeScene {
 			"Credits",
 			btnOpts...,
 		),
+		quitBtn: common.NewButton(
+			startX, topY+(btnH+gapY)*4,
+			btnW, btnH,
+			"Quit",
+			btnOpts...,
+		),
 	}
 }
 
@@ -92,6 +99,11 @@ func (h *HomeScene) Update(context *common.SceneContext) error {
 	if h.creditsBtn.Clicked {
 		context.SceneManager.SetScene("credits")
 		return nil
+	}
+
+	h.quitBtn.Update()
+	if h.quitBtn.Clicked {
+		return ebiten.Termination
 	}
 
 	return nil
@@ -121,7 +133,7 @@ func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 	h.text.DrawEmbossedHozCenterWithShadow(screen, "Choose an option to get started", 100, color.RGBA{0, 0, 0, 80}, 1, 1)
 
 	isHovered := false
-	for _, btn := range []*common.Button{h.playBtn, h.howToPlayBtn, h.settingsBtn, h.creditsBtn} {
+	for _, btn := range []*common.Button{h.playBtn, h.howToPlayBtn, h.settingsBtn, h.creditsBtn, h.quitBtn} {
 		btn.Draw(screen)
 		if btn.Hovered {
 			isHovered = true

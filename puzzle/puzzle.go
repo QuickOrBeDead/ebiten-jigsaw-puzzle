@@ -86,8 +86,12 @@ func (puz *Puzzle) DropPuzzlePieces() bool {
 	return false
 }
 
+func (puz *Puzzle) GroupCount() int {
+	return len(puz.groupsMap)
+}
+
 func (puz *Puzzle) IsSolved() bool {
-	return len(puz.groupsMap) == 1
+	return puz.GroupCount() == 1
 }
 
 func (p *Puzzle) GetCompletePercentage() int {

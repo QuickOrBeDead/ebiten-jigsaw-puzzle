@@ -1,10 +1,10 @@
 package common
 
 import (
-	"embed"
 	"image/color"
 	"log"
 
+	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/assets"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/tinne26/etxt"
 	"github.com/tinne26/etxt/cache"
@@ -26,15 +26,13 @@ type TextRenderer struct {
 }
 
 var (
-	//go:embed fonts/*
-	fonts        embed.FS
 	textRenderer *etxt.Renderer
 	fontLibrary  *font.Library
 )
 
 func init() {
 	fontLibrary = font.NewLibrary()
-	loaded, skipped, err := fontLibrary.ParseAllFromFS(fonts, "fonts")
+	loaded, skipped, err := fontLibrary.ParseAllFromFS(assets.Assets, "fonts")
 	if err != nil {
 		log.Fatalf("Error while loading fonts: %s", err.Error())
 	}

@@ -15,6 +15,8 @@ type Game struct {
 }
 
 func (g *Game) init() {
+	common.AudioManager = common.NewAudioManager()
+
 	gameImage := common.NewGameImage()
 	g.SceneManager.AddScene("home", func() common.Scene { return home.NewHomeScene() })
 	g.SceneManager.AddScene("startGame", func() common.Scene { return startGame.NewStartGameScene(gameImage) })

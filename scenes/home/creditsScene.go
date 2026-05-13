@@ -12,45 +12,74 @@ import (
 	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/common"
 )
 
+type creditLineType int
+
+const (
+	creditBlank creditLineType = iota
+	creditTitle
+	creditSubtitle
+	creditInfo
+	creditSection
+	creditItem
+)
+
+type creditLine struct {
+	kind creditLineType
+	text string
+}
+
 type CreditsScene struct {
 	backBtn      *common.Button
 	title        *common.TextRenderer
 	body         *common.TextRenderer
+	section      *common.TextRenderer
+	item         *common.TextRenderer
 	scrollY      float64
-	contentLines []string
+	contentLines []creditLine
 	lineHeight   int
 	isDragging   bool
 }
 
 const creditsLineHeight = 36
 
+func newLine(kind creditLineType, text string) creditLine {
+	return creditLine{kind: kind, text: text}
+}
+
 func NewCreditsScene() *CreditsScene {
-	lines := []string{
-		"Jigsaw Puzzle",
-		"",
-		"A puzzle game built with Ebitengine.",
-		"",
-		"Developer: Bora Akgün",
-		"Source Code: github.com/QuickOrBeDead/ebiten-jigsaw-puzzle",
-		"",
-		"Puzzle images from Pixabay:",
-		"pixabay.com/photos/mountainous-mountain-landscape-5942962 – Image by Pixabay",
-		"pixabay.com/photos/landscape-rice-terrace-5104510 – Image by CongVuphotographer",
-		"pixabay.com/photos/house-4028391 – Image by Peggychoucair",
-		"pixabay.com/photos/muhlviertel-7544316 – Image by Leonhard_Niederwimmer",
-		"pixabay.com/photos/desert-4388204 – Image by grebmot",
-		"pixabay.com/photos/sunrise-7591335 – Image by Nordseher",
-		"",
-		"Fonts: Roboto by Google.",
-		"",
-		"Libraries:",
-		"github.com/tinne26/etxt",
-		"github.com/sqweek/dialog",
+	lines := []creditLine{
+		newLine(creditTitle, "Jigsaw Puzzle"),
+		newLine(creditBlank, ""),
+		newLine(creditSubtitle, "A puzzle game built with Ebitengine."),
+		newLine(creditBlank, ""),
+		newLine(creditInfo, "Developer: Bora Akgün"),
+		newLine(creditInfo, "Source Code: github.com/QuickOrBeDead/ebiten-jigsaw-puzzle"),
+		newLine(creditBlank, ""),
+		newLine(creditSection, "Puzzle Images"),
+		newLine(creditItem, "pixabay.com/photos/mountainous-mountain-landscape-5942962 – Image by Pixabay"),
+		newLine(creditItem, "pixabay.com/photos/landscape-rice-terrace-5104510 – Image by CongVuphotographer"),
+		newLine(creditItem, "pixabay.com/photos/house-4028391 – Image by Peggychoucair"),
+		newLine(creditItem, "pixabay.com/photos/muhlviertel-7544316 – Image by Leonhard_Niederwimmer"),
+		newLine(creditItem, "pixabay.com/photos/desert-4388204 – Image by grebmot"),
+		newLine(creditItem, "pixabay.com/photos/sunrise-7591335 – Image by Nordseher"),
+		newLine(creditBlank, ""),
+		newLine(creditSection, "Fonts"),
+		newLine(creditItem, "Roboto by Google"),
+		newLine(creditBlank, ""),
+		newLine(creditSection, "Sound Effects"),
+		newLine(creditItem, "Interface Sounds Starter Pack by p0ss"),
+		newLine(creditItem, "opengameart.org – CC-BY-SA 3.0"),
+		newLine(creditBlank, ""),
+		newLine(creditSection, "Libraries"),
+		newLine(creditItem, "github.com/tinne26/etxt"),
+		newLine(creditItem, "github.com/sqweek/dialog"),
 	}
 
 	return &CreditsScene{
-		title:        common.NewTextRenderer(common.RobotoBoldFontName, common.TitleColor, 32, etxt.Center),
-		body:         common.NewTextRenderer(common.RobotoRegularFontName, common.BodyTextColor, 20, etxt.Center),
+		title:   common.NewTextRenderer(common.RobotoBoldFontName, common.TitleColor, 32, etxt.Center),
+		body:    common.NewTextRenderer(common.RobotoRegularFontName, common.BodyTextColor, 20, etxt.Center),
+		section: common.NewTextRenderer(common.RobotoBoldFontName, common.TitleColor, 20, etxt.Center),
+		item:    common.NewTextRenderer(common.RobotoRegularFontName, common.BodyTextColor, 18, etxt.Center),
 		contentLines: lines,
 		lineHeight:   creditsLineHeight,
 		backBtn: common.NewButton(
@@ -161,17 +190,27 @@ func (s *CreditsScene) Draw(screen *ebiten.Image, context *common.SceneContext) 
 
 	s.backBtn.Draw(screen)
 
-	s.body.SetSize(20)
-	s.body.SetAlign(etxt.Center)
-
 	cx := common.ScreenWidth / 2
 	startY := creditsContentStartY - int(s.scrollY)
-	for i, line := range s.contentLines {
+	for i, cl := range s.contentLines {
 		y := startY + i*s.lineHeight
 		if y < 60 || y > common.ScreenHeight {
 			continue
 		}
-		s.body.DrawEmbossedAutoWithShadow(screen, line, cx, y, color.RGBA{0, 0, 0, 80}, 1, 1)
+		switch cl.kind {
+		case creditTitle:
+			s.title.SetSize(28)
+			s.title.DrawEmbossedAutoWithShadow(screen, cl.text, cx, y, color.RGBA{0, 0, 0, 80}, 1, 1)
+		case creditSection:
+			s.section.SetSize(20)
+			s.section.DrawEmbossedAutoWithShadow(screen, cl.text, cx, y, color.RGBA{0, 0, 0, 80}, 1, 1)
+		case creditItem:
+			s.item.SetSize(18)
+			s.item.DrawEmbossedAutoWithShadow(screen, "• "+cl.text, cx, y, color.RGBA{0, 0, 0, 80}, 1, 1)
+		default:
+			s.body.SetSize(20)
+			s.body.DrawEmbossedAutoWithShadow(screen, cl.text, cx, y, color.RGBA{0, 0, 0, 80}, 1, 1)
+		}
 	}
 
 	if s.maxScroll() > 0 {

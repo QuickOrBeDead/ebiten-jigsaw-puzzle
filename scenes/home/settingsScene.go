@@ -12,12 +12,23 @@ import (
 )
 
 type SettingsScene struct {
-	backBtn *common.Button
-	title   *common.TextRenderer
-	body    *common.TextRenderer
+	backBtn       *common.Button
+	title         *common.TextRenderer
+	body          *common.TextRenderer
+	sfxSlider     *common.Slider
+	musicSlider   *common.Slider
+	prevSFXValue  int
+	prevMusicValue int
 }
 
 func NewSettingsScene() *SettingsScene {
+	settings := common.GetSettings()
+	sliderX := float32(common.ScreenWidth-300) / 2
+	sfxSlider := common.NewSlider(sliderX, 140, 300, 40, 0, 100, 1)
+	sfxSlider.Value = int(settings.SFXVolume * 100)
+	musicSlider := common.NewSlider(sliderX, 220, 300, 40, 0, 100, 1)
+	musicSlider.Value = int(settings.MusicVolume * 100)
+
 	return &SettingsScene{
 		title: common.NewTextRenderer(common.RobotoBoldFontName, common.TitleColor, 32, etxt.Center),
 		body:  common.NewTextRenderer(common.RobotoRegularFontName, common.BodyTextColor, 22, etxt.Left),
@@ -30,6 +41,10 @@ func NewSettingsScene() *SettingsScene {
 			common.ButtonOption.WithColor(common.HeaderButtonColor),
 			common.ButtonOption.WithHoverColor(common.HeaderButtonHoverColor),
 		),
+		sfxSlider:      sfxSlider,
+		musicSlider:    musicSlider,
+		prevSFXValue:   sfxSlider.Value,
+		prevMusicValue: musicSlider.Value,
 	}
 }
 
@@ -39,6 +54,29 @@ func (s *SettingsScene) Update(context *common.SceneContext) error {
 		context.SceneManager.SetScene("home")
 		return nil
 	}
+
+	s.sfxSlider.Update()
+	if s.sfxSlider.Value != s.prevSFXValue {
+		s.prevSFXValue = s.sfxSlider.Value
+		vol := float64(s.sfxSlider.Value) / 100.0
+		if common.AudioManager != nil {
+			common.AudioManager.SetSFXVolume(vol)
+		}
+		common.GetSettings().SFXVolume = vol
+		common.SaveSettings()
+	}
+
+	s.musicSlider.Update()
+	if s.musicSlider.Value != s.prevMusicValue {
+		s.prevMusicValue = s.musicSlider.Value
+		vol := float64(s.musicSlider.Value) / 100.0
+		if common.AudioManager != nil {
+			common.AudioManager.SetMusicVolume(vol)
+		}
+		common.GetSettings().MusicVolume = vol
+		common.SaveSettings()
+	}
+
 	return nil
 }
 
@@ -61,5 +99,23 @@ func (s *SettingsScene) Draw(screen *ebiten.Image, context *common.SceneContext)
 
 	s.body.SetSize(22)
 	s.body.SetAlign(etxt.Left)
-	s.body.DrawEmbossedAutoWithShadow(screen, fmt.Sprintf("Screen: %dx%d", common.ScreenWidth, common.ScreenHeight), 60, 100, color.RGBA{0, 0, 0, 80}, 1, 1)
+
+	sectionY := 90
+	sliderX := (common.ScreenWidth - 300) / 2
+
+	s.body.SetColor(common.TitleColor)
+	s.body.SetSize(20)
+	s.body.SetAlign(etxt.Center)
+	s.body.DrawEmbossedAutoWithShadow(screen, "Audio", common.ScreenWidth/2, sectionY, color.RGBA{0, 0, 0, 80}, 1, 1)
+
+	s.body.SetAlign(etxt.Left)
+	s.body.SetColor(common.BodyTextColor)
+	s.body.SetSize(18)
+	s.body.DrawEmbossedAutoWithShadow(screen, "SFX Volume", sliderX, sectionY+35, color.RGBA{0, 0, 0, 80}, 1, 1)
+	s.sfxSlider.Draw(screen)
+	s.body.DrawEmbossedAutoWithShadow(screen, fmt.Sprintf("%d%%", s.sfxSlider.Value), sliderX+320, sectionY+35, color.RGBA{0, 0, 0, 80}, 1, 1)
+
+	s.body.DrawEmbossedAutoWithShadow(screen, "Music Volume", sliderX, sectionY+115, color.RGBA{0, 0, 0, 80}, 1, 1)
+	s.musicSlider.Draw(screen)
+	s.body.DrawEmbossedAutoWithShadow(screen, fmt.Sprintf("%d%%", s.musicSlider.Value), sliderX+320, sectionY+115, color.RGBA{0, 0, 0, 80}, 1, 1)
 }

@@ -83,24 +83,11 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 		image:             image,
 		previewImage:      previewImage,
 		headerButtons: []*common.Button{
-			common.NewButton(
-				1025, 12,
-				80, 40,
-				"Restart",
-				buttonOptions...,
-			),
-			common.NewButton(
-				1150, 12,
-				80, 40,
-				"Home",
-				buttonOptions...,
-			),
+			common.NewButton(1025, 12, 80, 40, "Restart", buttonOptions...),
+			common.NewButton(1150, 12, 80, 40, "Home", buttonOptions...),
 		},
 		footerButtons: []*common.Button{
-			common.NewButton(
-				20, 0,
-				80, 36,
-				"Image",
+			common.NewButton(20, 0, 80, 36, "Image",
 				append(buttonOptions,
 					common.ButtonOption.WithToggle(true),
 					common.ButtonOption.WithActiveColor(common.PrimaryColor),
@@ -108,10 +95,7 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 					common.ButtonOption.WithFontSize(16),
 				)...,
 			),
-			common.NewButton(
-				140, 0,
-				80, 36,
-				"Ghost",
+			common.NewButton(140, 0, 80, 36, "Ghost",
 				append(buttonOptions,
 					common.ButtonOption.WithToggle(true),
 					common.ButtonOption.WithActiveColor(common.PrimaryColor),
@@ -141,9 +125,19 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		hasInput = true
+		groupsBefore := g.puzzle.GroupCount()
 		g.puzzle.HandleDraggedPieceSnapping(mx, my)
 		if g.puzzle.DropPuzzlePieces() {
 			g.incrementMoves()
+			if g.puzzle.GroupCount() < groupsBefore {
+				if common.AudioManager != nil {
+					common.AudioManager.PlaySnap()
+				}
+			} else {
+				if common.AudioManager != nil {
+					common.AudioManager.PlayDrop()
+				}
+			}
 		}
 	}
 
@@ -180,7 +174,6 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 
 	for _, button := range g.footerButtons {
 		button.Update()
-
 		if button.Clicked {
 			g.frameCacheValid = false
 			switch button.Label {
@@ -197,6 +190,9 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 			g.isPuzzleCompleted = true
 			g.endTime = now.Unix()
 			g.frameCacheValid = false
+			if common.AudioManager != nil {
+				common.AudioManager.PlayComplete()
+			}
 		} else if now.Unix() != g.lastTimeUpdate {
 			g.lastTimeUpdate = now.Unix()
 			g.elapsedTimeStr = formatDuration(now.Unix() - g.startTime)
