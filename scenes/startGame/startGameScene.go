@@ -1,4 +1,4 @@
-package homeScene
+package startGame
 
 import (
 	"image/color"
@@ -31,15 +31,16 @@ type puzzleImage struct {
 	hoverScale   float64
 }
 
-type HomeScene struct {
+type StartGameScene struct {
 	images       []*puzzleImage
 	uploadButton *common.Button
 	gameImage    *common.GameImage
 	text         *common.TextRenderer
 	startDialog  *startGameDialog
+	backBtn      *common.Button
 }
 
-func NewHomeScene(gameImage *common.GameImage) *HomeScene {
+func NewStartGameScene(gameImage *common.GameImage) *StartGameScene {
 	images, err := loadImages("./pictures")
 	if err != nil {
 		panic(err)
@@ -120,7 +121,7 @@ func NewHomeScene(gameImage *common.GameImage) *HomeScene {
 
 	buttonY := screenHeight - 120.0
 
-	return &HomeScene{
+	return &StartGameScene{
 		images:    puzzleImages,
 		gameImage: gameImage,
 		uploadButton: common.NewButton(
@@ -133,42 +134,57 @@ func NewHomeScene(gameImage *common.GameImage) *HomeScene {
 			common.ButtonOption.WithHoverColor(common.PrimaryHoverColor),
 			common.ButtonOption.WithShadowColor(common.ShadowColor),
 		),
+		backBtn: common.NewButton(
+			20, 12,
+			80, 40,
+			"Back",
+			common.ButtonOption.WithFontSize(18),
+			common.ButtonOption.WithFontColor(common.BodyTextColor),
+			common.ButtonOption.WithColor(common.HeaderButtonColor),
+			common.ButtonOption.WithHoverColor(common.HeaderButtonHoverColor),
+		),
 		text:        text,
 		startDialog: newStartGameDialog(),
 	}
 }
 
-func (h *HomeScene) Update(context *common.SceneContext) error {
+func (s *StartGameScene) Update(context *common.SceneContext) error {
 	mx, my := ebiten.CursorPosition()
 
-	h.uploadButton.Update()
+	s.backBtn.Update()
+	if s.backBtn.Clicked {
+		context.SceneManager.SetScene("home")
+		return nil
+	}
 
-	if h.uploadButton.Clicked {
+	s.uploadButton.Update()
+
+	if s.uploadButton.Clicked {
 		name, img, err := loadImageFromDesktop()
 		if err != nil && err != dialog.Cancelled {
 			return err
 		}
 
 		if img != nil {
-			h.startDialog.Open(img, name)
+			s.startDialog.Open(img, name)
 		}
 	}
 
-	if h.startDialog.IsOpen() {
-		h.startDialog.Update()
-		if h.startDialog.startClicked() {
-			h.gameImage.SetPieceCount(h.startDialog.PieceCount())
-			h.gameImage.SetImage(h.startDialog.ImageName(), h.startDialog.PreviewImage())
-			context.SceneManager.SetScene("Game")
+	if s.startDialog.IsOpen() {
+		s.startDialog.Update()
+		if s.startDialog.startClicked() {
+			s.gameImage.SetPieceCount(s.startDialog.PieceCount())
+			s.gameImage.SetImage(s.startDialog.ImageName(), s.startDialog.PreviewImage())
+			context.SceneManager.SetScene("game")
 			return nil
 		}
-		if h.startDialog.cancelClicked() {
-			h.startDialog.Close()
+		if s.startDialog.cancelClicked() {
+			s.startDialog.Close()
 		}
 		return nil
 	}
 
-	for _, img := range h.images {
+	for _, img := range s.images {
 		if img.previewImage.IsPointInImage(float64(mx), float64(my)) {
 			img.hovered = true
 		} else {
@@ -177,9 +193,9 @@ func (h *HomeScene) Update(context *common.SceneContext) error {
 	}
 
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		for _, img := range h.images {
+		for _, img := range s.images {
 			if img.previewImage.IsPointInImage(float64(mx), float64(my)) {
-				h.startDialog.Open(img.previewImage.Image, img.name)
+				s.startDialog.Open(img.previewImage.Image, img.name)
 			}
 		}
 	}
@@ -187,11 +203,9 @@ func (h *HomeScene) Update(context *common.SceneContext) error {
 	return nil
 }
 
-func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
-	// Background
+func (s *StartGameScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 	screen.Fill(common.BackgroundColor)
 
-	// Header area
 	const headerH float32 = 120
 	common.DrawPanel(screen, 0, 0, float32(common.ScreenWidth), headerH, common.HeaderColor, false, nil)
 
@@ -204,20 +218,14 @@ func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 		vector.FillRect(screen, 0, headerH+float32(i), float32(common.ScreenWidth), 1, color.RGBA{0, 0, 0, alpha}, false)
 	}
 
-	// Title with shadow
-	h.text.SetColor(common.TitleColor)
-	h.text.SetSize(42)
-	h.text.DrawEmbossedAutoWithShadow(screen, "Welcome to Jigsaw Puzzle!", common.ScreenWidth/2, 50, color.RGBA{0, 0, 0, 100}, 2, 2)
+	s.text.SetColor(common.TitleColor)
+	s.text.SetSize(42)
+	s.text.DrawEmbossedAutoWithShadow(screen, "Select a Puzzle Image", common.ScreenWidth/2, 50, color.RGBA{0, 0, 0, 100}, 2, 2)
 
-	// Subtitle
-	h.text.SetColor(common.MutedTextColor)
-	h.text.SetSize(20)
-	h.text.DrawEmbossedHozCenterWithShadow(screen, "Select a puzzle image", 100, color.RGBA{0, 0, 0, 80}, 1, 1)
+	s.backBtn.Draw(screen)
 
-	// Draw image cards
 	isHovered := false
-	for _, img := range h.images {
-		// Smooth hover animation
+	for _, img := range s.images {
 		targetScale := img.baseScale
 		if img.hovered {
 			targetScale = img.hoverScale
@@ -225,7 +233,6 @@ func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 		}
 		img.previewImage.Scale += (targetScale - img.previewImage.Scale) * 0.15
 
-		// Card background
 		cardColor := common.SurfaceColor
 		if img.hovered {
 			cardColor = common.SurfaceHoverColor
@@ -235,30 +242,28 @@ func (h *HomeScene) Draw(screen *ebiten.Image, context *common.SceneContext) {
 		img.previewImage.Draw(screen)
 	}
 
-	// Cursor update
 	if isHovered {
 		ebiten.SetCursorShape(ebiten.CursorShapeCrosshair)
 	} else {
 		ebiten.SetCursorShape(ebiten.CursorShapeDefault)
 	}
 
-	// Upload section - position "OR" text between images and button
-	if len(h.images) > 0 {
-		lastImg := h.images[len(h.images)-1]
+	if len(s.images) > 0 {
+		lastImg := s.images[len(s.images)-1]
 		imgH := float64(lastImg.previewImage.ScaledH)
 		orY := int(lastImg.y + imgH + 70)
-		h.text.SetColor(common.MutedTextColor)
-		h.text.SetSize(18)
-		h.text.DrawEmbossedHozCenterWithShadow(screen, "OR", orY, color.RGBA{0, 0, 0, 80}, 1, 1)
+		s.text.SetColor(common.MutedTextColor)
+		s.text.SetSize(18)
+		s.text.DrawEmbossedHozCenterWithShadow(screen, "OR", orY, color.RGBA{0, 0, 0, 80}, 1, 1)
 	} else {
-		h.text.SetColor(common.MutedTextColor)
-		h.text.SetSize(18)
-		h.text.DrawEmbossedHozCenterWithShadow(screen, "OR", 300, color.RGBA{0, 0, 0, 80}, 1, 1)
+		s.text.SetColor(common.MutedTextColor)
+		s.text.SetSize(18)
+		s.text.DrawEmbossedHozCenterWithShadow(screen, "OR", 300, color.RGBA{0, 0, 0, 80}, 1, 1)
 	}
 
-	h.uploadButton.Draw(screen)
+	s.uploadButton.Draw(screen)
 
-	h.startDialog.Draw(screen)
+	s.startDialog.Draw(screen)
 }
 
 func loadImageFromDesktop() (string, *ebiten.Image, error) {
@@ -286,7 +291,6 @@ func loadImages(path string) ([]*imageWithName, error) {
 					return err
 				}
 
-				// get the file name without the path and extension
 				name := strings.TrimSuffix(filepath.Base(p), ext)
 
 				images = append(images, &imageWithName{

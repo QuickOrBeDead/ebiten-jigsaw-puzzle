@@ -1,4 +1,4 @@
-package homeScene
+package startGame
 
 import (
 	"fmt"

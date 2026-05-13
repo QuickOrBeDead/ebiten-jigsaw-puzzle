@@ -1,4 +1,4 @@
-package gameScene
+package game
 
 import (
 	"fmt"
@@ -171,9 +171,9 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 			g.frameCacheValid = false
 			switch button.Label {
 			case "Home":
-				context.SceneManager.SetScene("Home")
+				context.SceneManager.SetScene("home")
 			case "Restart":
-				context.SceneManager.SetScene("Game")
+				context.SceneManager.SetScene("game")
 			}
 		}
 	}

@@ -4,8 +4,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/common"
-	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/scenes/gameScene"
-	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/scenes/homeScene"
+	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/scenes/game"
+	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/scenes/home"
+	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/scenes/startGame"
 )
 
 type Game struct {
@@ -15,12 +16,14 @@ type Game struct {
 
 func (g *Game) init() {
 	gameImage := common.NewGameImage()
-	g.SceneManager.AddScene("Home", func() common.Scene { return homeScene.NewHomeScene(gameImage) })
-	g.SceneManager.AddScene("Game", func() common.Scene { return gameScene.NewGameScene(gameImage) })
+	g.SceneManager.AddScene("home", func() common.Scene { return home.NewHomeScene() })
+	g.SceneManager.AddScene("startGame", func() common.Scene { return startGame.NewStartGameScene(gameImage) })
+	g.SceneManager.AddScene("game", func() common.Scene { return game.NewGameScene(gameImage) })
+	g.SceneManager.AddScene("howToPlay", func() common.Scene { return home.NewHowToPlayScene() })
+	g.SceneManager.AddScene("settings", func() common.Scene { return home.NewSettingsScene() })
+	g.SceneManager.AddScene("credits", func() common.Scene { return home.NewCreditsScene() })
 
-	// Set the initial scene to Home
-	g.SceneManager.SetScene("Home")
-
+	g.SceneManager.SetScene("home")
 }
 
 func (g *Game) Update() error {
