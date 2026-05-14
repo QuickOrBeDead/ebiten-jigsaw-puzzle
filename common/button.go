@@ -90,34 +90,69 @@ func (ButtonOptionBuilder) WithOnClick(onClickFunc func()) ButtonOptFunc {
 }
 
 type Button struct {
-	X              float32
-	Y              float32
-	Width          float32
-	Height         float32
-	Label          string
-	Color          color.RGBA
-	HoverColor     color.RGBA
-	ActiveColor    color.RGBA
-	ShadowColor    color.RGBA
-	Pressed        bool
-	Hovered        bool
-	HoverCursor    ebiten.CursorShapeType
-	Clicked        bool
-	OnClick        func()
-	FontSize       float64
-	FontColor      color.Color
-	FontName       string
-	IsToggle       bool
-	IsActive       bool
-	BorderColor    color.RGBA
-	BorderWidth    float32
-	Icon           *ebiten.Image
-	CornerRadius   float32
-	text           *TextRenderer
-	path           *vector.Path
-	hitMask        *image.Alpha
-	hoverProgress  float32
-	activeProgress float32
+	X            float32
+	Y            float32
+	Width        float32
+	Height       float32
+	Label        string
+	Color        color.RGBA
+	HoverColor   color.RGBA
+	ActiveColor  color.RGBA
+	ShadowColor  color.RGBA
+	Pressed      bool
+	Hovered      bool
+	HoverCursor  ebiten.CursorShapeType
+	Clicked      bool
+	OnClick      func()
+	FontSize     float64
+	FontColor    color.Color
+	FontName     string
+	IsToggle     bool
+	IsActive     bool
+	BorderColor  color.RGBA
+	BorderWidth  float32
+	Icon         *ebiten.Image
+	CornerRadius float32
+	text         *TextRenderer
+	path         *vector.Path
+	hitMask      *image.Alpha
+	fgImg        [6]*ebiten.Image
+}
+
+const (
+	stateNormal int = iota
+	stateHovered
+	statePressed
+	stateActive
+	stateActiveHovered
+	stateActivePressed
+)
+
+func stateIndex(isActive, hovered, pressed bool) int {
+	switch {
+	case pressed:
+		if isActive {
+			return stateActivePressed
+		}
+		return statePressed
+	case hovered:
+		if isActive {
+			return stateActiveHovered
+		}
+		return stateHovered
+	default:
+		if isActive {
+			return stateActive
+		}
+		return stateNormal
+	}
+}
+
+func btnShadowOffset(isPressed bool) int {
+	if isPressed {
+		return 2
+	}
+	return 7
 }
 
 func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc) *Button {
@@ -127,25 +162,23 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 	cornerRadius := height / 2
 
 	btn := &Button{
-		X:              x,
-		Y:              y,
-		Width:          width,
-		Height:         height,
-		Label:          label,
-		HoverCursor:    ebiten.CursorShapePointer,
-		Color:          color.RGBA{R: 54, G: 153, B: 255, A: 255},
-		HoverColor:     color.RGBA{R: 72, G: 176, B: 255, A: 255},
-		ActiveColor:    color.RGBA{R: 40, G: 130, B: 240, A: 255},
-		ShadowColor:    color.RGBA{R: 0, G: 0, B: 0, A: 50},
-		FontName:       fontName,
-		FontSize:       fontSize,
-		FontColor:      fontColor,
-		CornerRadius:   cornerRadius,
-		BorderWidth:    0,
-		IsToggle:       false,
-		IsActive:       false,
-		hoverProgress:  0,
-		activeProgress: 0,
+		X:            x,
+		Y:            y,
+		Width:        width,
+		Height:       height,
+		Label:        label,
+		HoverCursor:  ebiten.CursorShapePointer,
+		Color:        color.RGBA{R: 54, G: 153, B: 255, A: 255},
+		HoverColor:   color.RGBA{R: 72, G: 176, B: 255, A: 255},
+		ActiveColor:  color.RGBA{R: 40, G: 130, B: 240, A: 255},
+		ShadowColor:  color.RGBA{R: 0, G: 0, B: 0, A: 50},
+		FontName:     fontName,
+		FontSize:     fontSize,
+		FontColor:    fontColor,
+		CornerRadius: cornerRadius,
+		BorderWidth:  0,
+		IsToggle:     false,
+		IsActive:     false,
 	}
 
 	for _, opt := range opts {
@@ -166,54 +199,115 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 	btn.hitMask = CreateHitMask(int(width+2*r), int(height), &path, false)
 	btn.text = NewTextRenderer(btn.FontName, btn.FontColor, btn.FontSize, etxt.Center)
 
+	imgW := int(width + 2*r + 7)
+	imgH := int(height + 7)
+
+	type stateSpec struct {
+		idx      int
+		hovered  bool
+		pressed  bool
+		isActive bool
+	}
+
+	states := []stateSpec{
+		{stateNormal, false, false, false},
+		{stateHovered, true, false, false},
+		{statePressed, true, true, false},
+	}
+
+	if btn.IsToggle {
+		states = append(states,
+			stateSpec{stateActive, false, false, true},
+			stateSpec{stateActiveHovered, true, false, true},
+			stateSpec{stateActivePressed, true, true, true},
+		)
+	}
+
+	for _, s := range states {
+		img := ebiten.NewImage(imgW, imgH)
+		maxOff := btnShadowOffset(s.pressed)
+		baseAlpha := 35.0
+		if s.pressed {
+			baseAlpha = 15
+		}
+		for i := 1; i <= maxOff; i++ {
+			alpha := uint8(baseAlpha / (1.0 + float64(i)/float64(maxOff)))
+			off := float32(i)
+			c := color.RGBA{btn.ShadowColor.R, btn.ShadowColor.G, btn.ShadowColor.B, alpha}
+			StrokePathWithColor(img, btn.path, off, off, 2, c, true)
+		}
+
+		nImg := ebiten.NewImage(imgW, imgH)
+		nImg.DrawImage(img, nil)
+
+		col := getColor(btn.Color, btn.ActiveColor, btn.HoverColor, btn.IsToggle, s.isActive, s.hovered)
+		drawButtonBevel(nImg, 0, 0, btn.Width, btn.Height, btn.CornerRadius, col, s.pressed, DefaultButtonShaderConfig)
+
+		if btn.BorderWidth > 0 {
+			StrokePathWithColor(nImg, btn.path, 0, 0, btn.BorderWidth, btn.BorderColor, true)
+		}
+		if btn.IsToggle && s.isActive {
+			StrokePathWithColor(nImg, btn.path, 0, 0, 2, color.RGBA{100, 200, 255, 100}, true)
+		}
+
+		cx := int(btn.Width/2) + int(btn.CornerRadius)
+		cy := int(btn.Height / 2)
+		if s.pressed {
+			cy += 2
+		}
+		btn.text.DrawEmbossedAutoWithShadow(nImg, btn.Label, cx, cy, color.RGBA{0, 0, 0, 70}, 1, 1)
+
+		if btn.Icon != nil {
+			iconHeight := btn.Height * 0.6
+			iconX := float32(10)
+			iconY := (btn.Height - iconHeight) / 2
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(float64(iconHeight)/float64(btn.Icon.Bounds().Dy()), float64(iconHeight)/float64(btn.Icon.Bounds().Dy()))
+			op.GeoM.Translate(float64(iconX), float64(iconY))
+			nImg.DrawImage(btn.Icon, op)
+		}
+
+		btn.fgImg[s.idx] = nImg
+	}
+
 	return btn
 }
 
 func (b *Button) Draw(screen *ebiten.Image) {
-	baseColor := b.Color
-	if b.IsToggle && b.IsActive {
-		baseColor = b.ActiveColor
+	isActive := b.IsToggle && b.IsActive
+	idx := stateIndex(isActive, b.Hovered, b.Pressed)
+
+	fgImg := b.fgImg[idx]
+
+	if fgImg != nil {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(b.X), float64(b.Y))
+		screen.DrawImage(fgImg, op)
+	}
+}
+
+func getColor(buttonColor, activeColor, hoverColor color.RGBA, isToggle, isActive, isHovered bool) color.RGBA {
+	baseColor := buttonColor
+	if isToggle && isActive {
+		baseColor = activeColor
 	}
 
-	hoverColor := b.HoverColor
-	r := float32(baseColor.R) + (float32(hoverColor.R)-float32(baseColor.R))*b.hoverProgress
-	g := float32(baseColor.G) + (float32(hoverColor.G)-float32(baseColor.G))*b.hoverProgress
-	bl := float32(baseColor.B) + (float32(hoverColor.B)-float32(baseColor.B))*b.hoverProgress
-	a := float32(baseColor.A) + (float32(hoverColor.A)-float32(baseColor.A))*b.hoverProgress
+	hoverProgress := float32(0)
+	if isHovered {
+		hoverProgress = 1.
+	}
+
+	r := float32(baseColor.R) + (float32(hoverColor.R)-float32(baseColor.R))*hoverProgress
+	g := float32(baseColor.G) + (float32(hoverColor.G)-float32(baseColor.G))*hoverProgress
+	bl := float32(baseColor.B) + (float32(hoverColor.B)-float32(baseColor.B))*hoverProgress
+	a := float32(baseColor.A) + (float32(hoverColor.A)-float32(baseColor.A))*hoverProgress
 	currentColor := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(bl), A: uint8(a)}
-
-	b.drawShadow(screen)
-	drawButtonBevel(screen, b.X, b.Y, b.Width, b.Height, b.CornerRadius, currentColor, b.Pressed, DefaultButtonShaderConfig)
-
-	if b.BorderWidth > 0 {
-		StrokePathWithColor(screen, b.path, b.X, b.Y, b.BorderWidth, b.BorderColor, true)
-	}
-
-	if b.IsToggle && b.IsActive {
-		highlightColor := color.RGBA{R: 100, G: 200, B: 255, A: 100}
-		StrokePathWithColor(screen, b.path, b.X, b.Y, 2, highlightColor, true)
-	}
-
-	b.drawText(screen)
-
-	if b.Icon != nil {
-		iconHeight := b.Height * 0.6
-		aspect := float64(b.Icon.Bounds().Dx()) / float64(b.Icon.Bounds().Dy())
-		iconWidth := iconHeight * float32(aspect)
-		_ = iconWidth
-		iconX := b.X + 10
-		iconY := b.Y + (b.Height-iconHeight)/2
-		opt := &ebiten.DrawImageOptions{}
-		opt.GeoM.Scale(float64(iconHeight)/float64(b.Icon.Bounds().Dy()), float64(iconHeight)/float64(b.Icon.Bounds().Dy()))
-		opt.GeoM.Translate(float64(iconX), float64(iconY))
-		screen.DrawImage(b.Icon, opt)
-	}
+	return currentColor
 }
 
 func (b *Button) Update(context *SceneContext) {
 	b.Clicked = false
 	b.Hovered = b.isHovered()
-	b.updateHoverAnimation()
 
 	if b.Hovered {
 		context.Cursor = b.HoverCursor
@@ -238,28 +332,6 @@ func (b *Button) Update(context *SceneContext) {
 			}
 		}
 		b.Pressed = false
-	}
-}
-
-func (b *Button) updateHoverAnimation() {
-	target := float32(0.0)
-	if b.Hovered {
-		target = 1.0
-	}
-	b.hoverProgress += (target - b.hoverProgress) * 0.15
-	if math.Abs(float64(target-b.hoverProgress)) < 0.01 {
-		b.hoverProgress = target
-	}
-
-	if b.IsToggle {
-		activeTarget := float32(0.0)
-		if b.IsActive {
-			activeTarget = 1.0
-		}
-		b.activeProgress += (activeTarget - b.activeProgress) * 0.15
-		if math.Abs(float64(activeTarget-b.activeProgress)) < 0.01 {
-			b.activeProgress = activeTarget
-		}
 	}
 }
 
@@ -302,7 +374,6 @@ func (b *Button) drawText(screen *ebiten.Image) {
 	b.text.SetFont(b.FontName)
 	b.text.SetSize(b.FontSize)
 	b.text.SetAlign(etxt.Center)
-
 	b.text.SetColor(b.FontColor)
 	b.text.DrawEmbossedAutoWithShadow(screen, b.Label, textX, textY, color.RGBA{0, 0, 0, 70}, 1, 1)
 }
