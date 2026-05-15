@@ -2,6 +2,7 @@ package common
 
 import (
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -83,4 +84,22 @@ func DrawSoftShadow(screen *ebiten.Image, x, y, w, h float32, shadowColor color.
 func getRGBA(c color.Color) color.RGBA {
 	r, g, b, a := c.RGBA()
 	return color.RGBA{R: uint8(r >> 8), G: uint8(g >> 8), B: uint8(b >> 8), A: uint8(a >> 8)}
+}
+
+func lighterColor(c color.RGBA, factor float32) color.RGBA {
+	return color.RGBA{
+		R: uint8(math.Min(255, float64(c.R)+(255-float64(c.R))*float64(factor))),
+		G: uint8(math.Min(255, float64(c.G)+(255-float64(c.G))*float64(factor))),
+		B: uint8(math.Min(255, float64(c.B)+(255-float64(c.B))*float64(factor))),
+		A: c.A,
+	}
+}
+
+func darkerColor(c color.RGBA, factor float32) color.RGBA {
+	return color.RGBA{
+		R: uint8(float32(c.R) * (1 - factor)),
+		G: uint8(float32(c.G) * (1 - factor)),
+		B: uint8(float32(c.B) * (1 - factor)),
+		A: c.A,
+	}
 }

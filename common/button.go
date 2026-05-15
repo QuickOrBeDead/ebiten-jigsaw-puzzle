@@ -237,17 +237,17 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 			StrokePathWithColor(img, btn.path, off, off, 2, c, true)
 		}
 
-		nImg := ebiten.NewImage(imgW, imgH)
-		nImg.DrawImage(img, nil)
+		stateImg := ebiten.NewImage(imgW, imgH)
+		stateImg.DrawImage(img, nil)
 
 		col := getColor(btn.Color, btn.ActiveColor, btn.HoverColor, btn.IsToggle, s.isActive, s.hovered)
-		drawButtonBevel(nImg, 0, 0, btn.Width, btn.Height, btn.CornerRadius, col, s.pressed, DefaultButtonShaderConfig)
+		drawButtonBevel(stateImg, 0, 0, btn.Width, btn.Height, btn.CornerRadius, col, s.pressed, DefaultButtonShaderConfig)
 
 		if btn.BorderWidth > 0 {
-			StrokePathWithColor(nImg, btn.path, 0, 0, btn.BorderWidth, btn.BorderColor, true)
+			StrokePathWithColor(stateImg, btn.path, 0, 0, btn.BorderWidth, btn.BorderColor, true)
 		}
 		if btn.IsToggle && s.isActive {
-			StrokePathWithColor(nImg, btn.path, 0, 0, 2, color.RGBA{100, 200, 255, 100}, true)
+			StrokePathWithColor(stateImg, btn.path, 0, 0, 2, color.RGBA{100, 200, 255, 100}, true)
 		}
 
 		cx := int(btn.Width/2) + int(btn.CornerRadius)
@@ -255,7 +255,7 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 		if s.pressed {
 			cy += 2
 		}
-		btn.text.DrawEmbossedAutoWithShadow(nImg, btn.Label, cx, cy, color.RGBA{0, 0, 0, 70}, 1, 1)
+		btn.text.DrawEmbossedAutoWithShadow(stateImg, btn.Label, cx, cy, color.RGBA{0, 0, 0, 70}, 1, 1)
 
 		if btn.Icon != nil {
 			iconHeight := btn.Height * 0.6
@@ -264,10 +264,10 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(float64(iconHeight)/float64(btn.Icon.Bounds().Dy()), float64(iconHeight)/float64(btn.Icon.Bounds().Dy()))
 			op.GeoM.Translate(float64(iconX), float64(iconY))
-			nImg.DrawImage(btn.Icon, op)
+			stateImg.DrawImage(btn.Icon, op)
 		}
 
-		btn.fgImg[s.idx] = nImg
+		btn.fgImg[s.idx] = stateImg
 	}
 
 	return btn
@@ -338,65 +338,4 @@ func (b *Button) Update(context *SceneContext) {
 func (b *Button) isHovered() bool {
 	mx, my := ebiten.CursorPosition()
 	return b.hitMask.AlphaAt(mx-int(b.X), my-int(b.Y)).A > 0
-}
-
-func (b *Button) drawShadow(screen *ebiten.Image) {
-	maxOffset := 5
-	baseAlpha := 35.0
-
-	if b.Hovered {
-		maxOffset = 7
-		baseAlpha = 45
-	}
-
-	if b.Pressed {
-		maxOffset = 2
-		baseAlpha = 15
-	}
-
-	for i := 1; i <= maxOffset; i++ {
-		alpha := uint8(baseAlpha / (1.0 + float64(i)/float64(maxOffset)))
-		offset := float32(i)
-		shadowColor := color.RGBA{b.ShadowColor.R, b.ShadowColor.G, b.ShadowColor.B, alpha}
-		StrokePathWithColor(screen, b.path, b.X+offset, b.Y+offset, 2, shadowColor, true)
-	}
-}
-
-func (b *Button) drawBackground(screen *ebiten.Image, bColor color.Color, offsetX, offsetY float32) {
-	FillPathWithColor(screen, b.path, b.X+offsetX, b.Y+offsetY, bColor, true)
-}
-
-func (b *Button) drawText(screen *ebiten.Image) {
-	textX, textY := b.getCenter()
-	if b.Pressed {
-		textY += 2
-	}
-	b.text.SetFont(b.FontName)
-	b.text.SetSize(b.FontSize)
-	b.text.SetAlign(etxt.Center)
-	b.text.SetColor(b.FontColor)
-	b.text.DrawEmbossedAutoWithShadow(screen, b.Label, textX, textY, color.RGBA{0, 0, 0, 70}, 1, 1)
-}
-
-func (b *Button) getCenter() (int, int) {
-	r := int(b.CornerRadius)
-	return int(b.X) + int(b.Width/2) + r, int(b.Y) + int(b.Height/2)
-}
-
-func lighterColor(c color.RGBA, factor float32) color.RGBA {
-	return color.RGBA{
-		R: uint8(math.Min(255, float64(c.R)+(255-float64(c.R))*float64(factor))),
-		G: uint8(math.Min(255, float64(c.G)+(255-float64(c.G))*float64(factor))),
-		B: uint8(math.Min(255, float64(c.B)+(255-float64(c.B))*float64(factor))),
-		A: c.A,
-	}
-}
-
-func darkerColor(c color.RGBA, factor float32) color.RGBA {
-	return color.RGBA{
-		R: uint8(float32(c.R) * (1 - factor)),
-		G: uint8(float32(c.G) * (1 - factor)),
-		B: uint8(float32(c.B) * (1 - factor)),
-		A: c.A,
-	}
 }

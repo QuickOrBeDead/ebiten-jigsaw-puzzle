@@ -17,15 +17,17 @@ type SceneContext struct {
 }
 
 type SceneManager struct {
-	current      Scene
-	sceneContext *SceneContext
-	scenes       map[string]func(*SceneContext) Scene
+	current       Scene
+	sceneContext  *SceneContext
+	sceneCreators map[string]func(*SceneContext) Scene
+	scenes        map[string]Scene
 }
 
 func NewSceneManager() *SceneManager {
 	m := &SceneManager{
-		sceneContext: &SceneContext{},
-		scenes:       map[string]func(*SceneContext) Scene{},
+		sceneContext:  &SceneContext{},
+		sceneCreators: map[string]func(*SceneContext) Scene{},
+		scenes:        map[string]Scene{},
 	}
 
 	m.sceneContext.SceneManager = m
@@ -33,16 +35,23 @@ func NewSceneManager() *SceneManager {
 }
 
 func (s *SceneManager) AddScene(name string, newSceneFunc func(*SceneContext) Scene) {
-	s.scenes[name] = newSceneFunc
+	s.sceneCreators[name] = newSceneFunc
 }
 
 func (s *SceneManager) SetScene(name string) {
-	newSceneFunc, b := s.scenes[name]
+	if scene, ok := s.scenes[name]; ok {
+		s.current = scene
+		return
+	}
+
+	newSceneFunc, b := s.sceneCreators[name]
 	if !b {
 		panic(fmt.Sprintf("%s scene not found", name))
 	}
 
-	s.current = newSceneFunc(s.sceneContext)
+	n := newSceneFunc(s.sceneContext)
+	s.scenes[name] = n
+	s.current = n
 }
 
 func (s *SceneManager) Update() error {
