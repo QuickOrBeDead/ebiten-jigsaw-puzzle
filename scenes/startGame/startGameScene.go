@@ -14,6 +14,7 @@ import (
 	"github.com/sqweek/dialog"
 	"github.com/tinne26/etxt"
 
+	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/assets"
 	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/common"
 )
 
@@ -41,7 +42,7 @@ type StartGameScene struct {
 }
 
 func NewStartGameScene(gameImage *common.GameImage, context *common.SceneContext) *StartGameScene {
-	images, err := loadImages("./pictures")
+	images, err := loadImages(assets.Assets, "pictures")
 	if err != nil {
 		panic(err)
 	}
@@ -263,16 +264,16 @@ func loadImageFromDesktop() (string, *ebiten.Image, error) {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)), img, err
 }
 
-func loadImages(path string) ([]*imageWithName, error) {
+func loadImages(fsys fs.FS, path string) ([]*imageWithName, error) {
 	var images []*imageWithName
 
-	err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(fsys, path, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
 			if ext := filepath.Ext(p); ext == ".jpg" || ext == ".jpeg" {
-				img, err := loadJpegImageFromPath(p)
+				img, err := loadJpegImageFromFS(fsys, p)
 				if err != nil {
 					return err
 				}
@@ -292,6 +293,22 @@ func loadImages(path string) ([]*imageWithName, error) {
 		return nil, err
 	}
 	return images, nil
+}
+
+func loadJpegImageFromFS(fsys fs.FS, path string) (*ebiten.Image, error) {
+	file, err := fsys.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	defer file.Close()
+
+	img, err := jpeg.Decode(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return ebiten.NewImageFromImage(img), nil
 }
 
 func loadJpegImageFromPath(path string) (*ebiten.Image, error) {
