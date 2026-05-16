@@ -56,16 +56,31 @@ func (ButtonOptionBuilder) WithShadowColor(shadowColor color.RGBA) ButtonOptFunc
 	}
 }
 
-func (ButtonOptionBuilder) WithToggle(isToggle bool) ButtonOptFunc {
+func (ButtonOptionBuilder) WithSize(size ButtonSize) ButtonOptFunc {
 	return func(b *Button) {
-		b.IsToggle = isToggle
+		b.BtnSize = size
 	}
 }
 
-func (ButtonOptionBuilder) WithBorder(borderColor color.RGBA, borderWidth float32) ButtonOptFunc {
+func (ButtonOptionBuilder) WithColorEnum(color ButtonColor) ButtonOptFunc {
 	return func(b *Button) {
-		b.BorderColor = borderColor
-		b.BorderWidth = borderWidth
+		b.BtnColor = color
+	}
+}
+
+func (ButtonOptionBuilder) WithType(typ ButtonType) ButtonOptFunc {
+	return func(b *Button) {
+		b.BtnType = typ
+	}
+}
+
+func (ButtonOptionBuilder) WithToggle(isToggle bool) ButtonOptFunc {
+	return func(b *Button) {
+		if isToggle {
+			b.BtnType = ButtonTypeToggle
+		} else {
+			b.BtnType = ButtonTypeNormal
+		}
 	}
 }
 
@@ -104,6 +119,9 @@ type Button struct {
 	BorderColor  color.RGBA
 	BorderWidth  float32
 	CornerRadius float32
+	BtnSize      ButtonSize
+	BtnColor     ButtonColor
+	BtnType      ButtonType
 	text         *TextRenderer
 	hitMask      *image.Alpha
 	cacheItem    *buttonCacheItem
@@ -140,6 +158,9 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 		BorderWidth:  0,
 		IsToggle:     false,
 		IsActive:     false,
+		BtnSize:      resolveButtonSize(height),
+		BtnColor:     ButtonColorPrimary,
+		BtnType:      ButtonTypeNormal,
 	}
 
 	for _, opt := range opts {
@@ -147,7 +168,7 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 	}
 
 	btn.text = NewTextRenderer(btn.FontName, btn.FontColor, btn.FontSize, etxt.Center)
-	btn.cacheItem = buttonCacheManager.addImage(btn.Width, btn.Height, btn.Color, btn.HoverColor, btn.ActiveColor, btn.ShadowColor, btn.BorderColor, btn.BorderWidth)
+	btn.cacheItem = buttonCacheManager.addImage(btn.BtnSize, btn.BtnColor, btn.BtnType)
 	btn.hitMask = btn.cacheItem.hitMask
 
 	return btn
@@ -173,7 +194,7 @@ func (b *Button) currentImg(isActive, hovered, pressed bool) *ebiten.Image {
 }
 
 func (b *Button) Draw(screen *ebiten.Image) {
-	isActive := b.IsToggle && b.IsActive
+	isActive := b.BtnType == ButtonTypeToggle && b.IsActive
 	img := b.currentImg(isActive, b.Hovered, b.Pressed)
 	if img == nil {
 		return
@@ -222,7 +243,7 @@ func (b *Button) Update(context *SceneContext) {
 
 	if b.Pressed && !pressed {
 		if b.Hovered {
-			if b.IsToggle {
+			if b.BtnType == ButtonTypeToggle {
 				b.IsActive = !b.IsActive
 			}
 			b.Clicked = true

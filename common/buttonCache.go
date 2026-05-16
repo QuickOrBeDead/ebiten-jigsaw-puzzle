@@ -9,6 +9,79 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
+type ButtonSize int
+
+const (
+	ButtonSizeSmall  ButtonSize = iota
+	ButtonSizeNormal
+	ButtonSizeBig
+)
+
+type ButtonColor int
+
+const (
+	ButtonColorPrimary   ButtonColor = iota
+	ButtonColorSecondary
+)
+
+type ButtonType int
+
+const (
+	ButtonTypeNormal ButtonType = iota
+	ButtonTypeToggle
+)
+
+type buttonSizeDef struct {
+	width  float32
+	height float32
+}
+
+type buttonColorDef struct {
+	color       color.RGBA
+	hoverColor  color.RGBA
+	activeColor color.RGBA
+	shadowColor color.RGBA
+	borderColor color.RGBA
+	borderWidth float32
+}
+
+var buttonSizeDefs = map[ButtonSize]buttonSizeDef{
+	ButtonSizeSmall:  {80, 40},
+	ButtonSizeNormal: {160, 44},
+	ButtonSizeBig:    {260, 60},
+}
+
+var buttonColorDefs = map[ButtonColor]buttonColorDef{
+	ButtonColorPrimary: {
+		color:       PrimaryColor,
+		hoverColor:  PrimaryHoverColor,
+		activeColor: PrimaryActiveColor,
+		shadowColor: ShadowColor,
+	},
+	ButtonColorSecondary: {
+		color:       HeaderButtonColor,
+		hoverColor:  HeaderButtonHoverColor,
+		activeColor: HeaderButtonActiveColor,
+		shadowColor: ShadowColorDark,
+	},
+}
+
+func resolveButtonSize(height float32) ButtonSize {
+	if height <= 40 {
+		return ButtonSizeSmall
+	} else if height <= 50 {
+		return ButtonSizeNormal
+	}
+	return ButtonSizeBig
+}
+
+func resolveButtonColor(clr color.RGBA) ButtonColor {
+	if clr == HeaderButtonColor {
+		return ButtonColorSecondary
+	}
+	return ButtonColorPrimary
+}
+
 type buttonCache struct {
 	items []*buttonCacheItem
 	ids   map[buttonCacheKey]int
@@ -24,10 +97,9 @@ type buttonCacheItem struct {
 }
 
 type buttonCacheKey struct {
-	width, height                  int
-	color, hoverColor, activeColor color.RGBA
-	shadowColor, borderColor       color.RGBA
-	borderWidth                    float32
+	size  ButtonSize
+	color ButtonColor
+	typ   ButtonType
 }
 
 var buttonCacheManager *buttonCache
@@ -40,16 +112,19 @@ func init() {
 	}
 }
 
-func (b *buttonCache) addImage(width, height float32, clr, hoverClr, activeClr, shadowClr, borderClr color.RGBA, borderWidth float32) *buttonCacheItem {
-	key := buttonCacheKey{
-		width: int(width), height: int(height),
-		color: clr, hoverColor: hoverClr, activeColor: activeClr,
-		shadowColor: shadowClr, borderColor: borderClr,
-		borderWidth: borderWidth,
-	}
+func (b *buttonCache) addImage(btnSize ButtonSize, btnColor ButtonColor, btnType ButtonType) *buttonCacheItem {
+	key := buttonCacheKey{size: btnSize, color: btnColor, typ: btnType}
 	if id, ok := b.ids[key]; ok {
 		return b.items[id]
 	}
+
+	sz := buttonSizeDefs[btnSize]
+	clr := buttonColorDefs[btnColor]
+	width := sz.width
+	height := sz.height
+	shadowClr := clr.shadowColor
+	borderWidth := clr.borderWidth
+	borderClr := clr.borderColor
 
 	newId := b.index
 	b.ids[key] = newId
@@ -87,7 +162,7 @@ func (b *buttonCache) addImage(width, height float32, clr, hoverClr, activeClr, 
 		}
 		stateImg := ebiten.NewImage(imgW, imgH)
 		stateImg.DrawImage(img, nil)
-		col := getColor(baseColor, hoverClr, hovered)
+		col := getColor(baseColor, clr.hoverColor, hovered)
 		drawButtonBevel(stateImg, 0, 0, width, height, cornerRadius, col, pressed, DefaultButtonShaderConfig)
 		resultImg := ebiten.NewImage(imgW, imgH)
 		resultImg.DrawImage(stateImg, nil)
@@ -103,12 +178,12 @@ func (b *buttonCache) addImage(width, height float32, clr, hoverClr, activeClr, 
 	item := &buttonCacheItem{
 		path:             path,
 		hitMask:          hitMask,
-		normalImg:        createImg(false, false, clr, false),
-		hoveredImg:       createImg(true, false, clr, false),
-		pressedImg:       createImg(true, true, clr, false),
-		normalActiveImg:  createImg(false, false, activeClr, true),
-		hoveredActiveImg: createImg(true, false, activeClr, true),
-		pressedActiveImg: createImg(true, true, activeClr, true),
+		normalImg:        createImg(false, false, clr.color, false),
+		hoveredImg:       createImg(true, false, clr.color, false),
+		pressedImg:       createImg(true, true, clr.color, false),
+		normalActiveImg:  createImg(false, false, clr.activeColor, true),
+		hoveredActiveImg: createImg(true, false, clr.activeColor, true),
+		pressedActiveImg: createImg(true, true, clr.activeColor, true),
 		cornerRadius:     cornerRadius,
 		width:            width,
 		height:           height,
