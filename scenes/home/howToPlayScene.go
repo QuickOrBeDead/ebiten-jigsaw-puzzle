@@ -43,12 +43,8 @@ func (s *HowToPlayScene) Draw(screen *ebiten.Image, context *common.SceneContext
 
 	const headerH float32 = 64
 	common.DrawPanel(screen, 0, 0, float32(common.ScreenWidth), headerH, common.HeaderColor, false, nil)
-	vector.FillRect(screen, 0, 0, float32(common.ScreenWidth), 1, color.RGBA{255, 255, 255, 14}, false)
+	vector.FillRect(screen, 0, 0, float32(common.ScreenWidth), 1, common.BackgroundColor, false)
 	common.DrawPanel(screen, 0, headerH-3, float32(common.ScreenWidth), 3, common.PrimaryColor, false, nil)
-	for i := 0; i < 4; i++ {
-		alpha := uint8(35 - 7*i)
-		vector.FillRect(screen, 0, headerH+float32(i), float32(common.ScreenWidth), 1, color.RGBA{0, 0, 0, alpha}, false)
-	}
 
 	s.title.DrawEmbossedAutoWithShadow(screen, "How to Play", common.ScreenWidth/2, 32, color.RGBA{0, 0, 0, 100}, 1, 1)
 

@@ -34,15 +34,14 @@ var (
 	PrimaryHoverColor  = color.RGBA{R: 92, G: 160, B: 255, A: 255} // #5CA0FF
 	PrimaryActiveColor = color.RGBA{R: 55, G: 120, B: 230, A: 255} // #3778E6
 
+	SecondaryButtonColor       = color.RGBA{R: 42, G: 44, B: 56, A: 255} // #2A2C38
+	SecondaryButtonHoverColor  = color.RGBA{R: 58, G: 60, B: 72, A: 255} // #3A3C48
+	SecondaryButtonActiveColor = color.RGBA{R: 68, G: 70, B: 84, A: 255} // #444654
+
 	// Semantic colors
 	SuccessColor = color.RGBA{R: 76, G: 175, B: 132, A: 255} // #4CAF84 - Teal-green
 	WarningColor = color.RGBA{R: 255, G: 180, B: 60, A: 255} // #FFB43C
 	ErrorColor   = color.RGBA{R: 225, G: 85, B: 85, A: 255}  // #E15555
-
-	// Header button colors - slightly more contrast against header
-	HeaderButtonColor       = color.RGBA{R: 42, G: 44, B: 56, A: 255} // #2A2C38
-	HeaderButtonHoverColor  = color.RGBA{R: 58, G: 60, B: 72, A: 255} // #3A3C48
-	HeaderButtonActiveColor = color.RGBA{R: 68, G: 70, B: 84, A: 255} // #444654
 
 	// Shadow colors
 	ShadowColor     = color.RGBA{R: 0, G: 0, B: 0, A: 40} // Subtle shadow

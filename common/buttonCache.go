@@ -59,9 +59,9 @@ var buttonColorDefs = map[ButtonColor]buttonColorDef{
 		shadowColor: ShadowColor,
 	},
 	ButtonColorSecondary: {
-		color:       HeaderButtonColor,
-		hoverColor:  HeaderButtonHoverColor,
-		activeColor: HeaderButtonActiveColor,
+		color:       SecondaryButtonColor,
+		hoverColor:  SecondaryButtonHoverColor,
+		activeColor: SecondaryButtonActiveColor,
 		shadowColor: ShadowColorDark,
 	},
 }
@@ -91,9 +91,10 @@ var buttonCacheManager *buttonCache
 
 func init() {
 	buttonCacheManager = &buttonCache{
-		items: []*buttonCacheItem{},
-		ids:   make(map[buttonCacheKey]int),
-		index: 0,
+		items:           []*buttonCacheItem{},
+		ids:             make(map[buttonCacheKey]int),
+		index:           0,
+		drawButtonBevel: false,
 	}
 }
 
