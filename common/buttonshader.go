@@ -34,6 +34,8 @@ var CornerRadius float
 var ButtonColor vec4
 var LightDir vec2
 var SampleDist float
+var HighlightIntensity float
+var ShadowIntensity float
 
 func sdRoundedRect(p vec2, size vec2, r float) float {
 	q := abs(p) - size*0.5 + r
@@ -70,8 +72,8 @@ func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
 
 	strength := gm * gm * gm * edgeWeight * edgeWeight
 
-	highlight := clamp(facing, 0.0, 1.0) * strength * 0.5
-	shadow := clamp(-facing, 0.0, 1.0) * strength * 0.4
+	highlight := clamp(facing, 0.0, 1.0) * strength * HighlightIntensity
+	shadow := clamp(-facing, 0.0, 1.0) * strength * ShadowIntensity
 
 	r := ButtonColor.r + highlight - shadow
 	g := ButtonColor.g + highlight - shadow
@@ -116,12 +118,14 @@ func drawButtonBevel(screen *ebiten.Image, x, y, w, h, r float32, col color.RGBA
 	op := &ebiten.DrawRectShaderOptions{}
 	op.GeoM.Translate(float64(x), float64(y))
 	op.Uniforms = map[string]any{
-		"Center":        []float32{x + bw*0.5, y + bh*0.5},
-		"Size":          []float32{bw, bh},
-		"CornerRadius":  r,
-		"ButtonColor":   []float32{colR, colG, colB, colA},
-		"LightDir":      []float32{cfg.LightDirX, cfg.LightDirY},
-		"SampleDist":    cfg.SampleDist,
+		"Center":             []float32{x + bw*0.5, y + bh*0.5},
+		"Size":               []float32{bw, bh},
+		"CornerRadius":       r,
+		"ButtonColor":        []float32{colR, colG, colB, colA},
+		"LightDir":           []float32{cfg.LightDirX, cfg.LightDirY},
+		"SampleDist":         cfg.SampleDist,
+		"HighlightIntensity": cfg.HighlightIntensity,
+		"ShadowIntensity":    cfg.ShadowIntensity,
 	}
 	screen.DrawRectShader(int(bw), int(bh), buttonShader, op)
 }

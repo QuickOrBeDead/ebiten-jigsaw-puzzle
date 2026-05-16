@@ -49,12 +49,12 @@ jobs:
             pkg-config
 
       - name: Build
+        shell: bash
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: amd64
           CGO_ENABLED: 1
         run: |
-          # Use -ldflags="-H=windowsgui" for Windows to hide the console
           if [ "${{ matrix.goos }}" = "windows" ]; then
             go build -ldflags="-H=windowsgui" -o ${{ matrix.artifact_name }} .
           else
