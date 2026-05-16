@@ -1,31 +1,88 @@
 package piece
 
 import (
+	"math"
+
 	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/common"
 	"github.com/QuickOrBeDead/ebiten-jigsaw-puzzle/edge"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 type GroupId int
 
 type PieceGroup struct {
-	Id                  GroupId
-	Pieces              []*Piece
-	ConnectedSlotsCount int
-	prevX, prevY        int
+	Id                    GroupId
+	Pieces                []*Piece
+	ConnectedSlotsCount   int
+	prevX, prevY          int
+	path                  *vector.Path
+	x, y                  int
+	shadowImage           *ebiten.Image
+	shadowImageCacheValid bool
+	boundsX, boundsY      int
 }
 
 var inverseEdge = [4]edge.Edge{edge.Bottom, edge.Left, edge.Top, edge.Right}
 
 const MergeSnapThreshold = 5 // Max pixel distance to trigger piece merge
 
-func NewPieceGroup(id GroupId, piece *Piece) *PieceGroup {
-	return &PieceGroup{
+func NewPieceGroup(id GroupId, p *Piece) *PieceGroup {
+	pg := &PieceGroup{
 		Id:                  id,
-		Pieces:              []*Piece{piece},
+		Pieces:              []*Piece{p},
 		ConnectedSlotsCount: 0,
+		path:                &vector.Path{},
+		x:                   p.Pos.X,
+		y:                   p.Pos.Y,
 	}
+	pg.path.AddPath(p.Geo.Path, &vector.AddPathOptions{})
+	pg.cacheShadow()
+	return pg
+}
+
+func (pg *PieceGroup) MergePath(p *Piece) {
+	op := &vector.AddPathOptions{}
+	op.GeoM.Translate(float64(p.Pos.X-pg.x), float64(p.Pos.Y-pg.y))
+	pg.path.AddPath(p.Geo.Path, op)
+	pg.shadowImageCacheValid = false
+}
+
+func (g *PieceGroup) Bounds() (x, y, w, h int) {
+	minX, minY := math.MaxInt32, math.MaxInt32
+	maxX, maxY := math.MinInt32, math.MinInt32
+	for _, p := range g.Pieces {
+		rx := p.Pos.X - g.x
+		ry := p.Pos.Y - g.y
+		rw := p.Geo.BoxSize.W
+		rh := p.Geo.BoxSize.H
+		if rx < minX {
+			minX = rx
+		}
+		if ry < minY {
+			minY = ry
+		}
+		if rx+rw > maxX {
+			maxX = rx + rw
+		}
+		if ry+rh > maxY {
+			maxY = ry + rh
+		}
+	}
+	return minX, minY, maxX - minX, maxY - minY
+}
+
+func (g *PieceGroup) cacheShadow() {
+	shadowPadding := 10
+	bx, by, bw, bh := g.Bounds()
+	g.boundsX, g.boundsY = bx, by
+	if g.shadowImage != nil {
+		g.shadowImage.Deallocate()
+	}
+
+	g.shadowImage = ebiten.NewImage(bw+shadowPadding*2, bh+shadowPadding*2)
+	common.DrawShadowForPath(g.shadowImage, float64(-bx+shadowPadding), float64(-by+shadowPadding), g.path)
 }
 
 func (g *PieceGroup) Contains(mx, my int) bool {
@@ -50,12 +107,26 @@ func (g *PieceGroup) ChangePosition(mx, my int) {
 
 	g.prevX = mx
 	g.prevY = my
+
+	g.x += dx
+	g.y += dy
 }
 
 func (g *PieceGroup) Draw(screen *ebiten.Image) {
 	for _, p := range g.Pieces {
 		p.Draw(screen)
 	}
+}
+
+func (g *PieceGroup) DrawShadow(screen *ebiten.Image) {
+	if !g.shadowImageCacheValid {
+		g.cacheShadow()
+		g.shadowImageCacheValid = true
+	}
+
+	opt := &ebiten.DrawImageOptions{}
+	opt.GeoM.Translate(float64(g.x+g.boundsX), float64(g.y+g.boundsY))
+	screen.DrawImage(g.shadowImage, opt)
 }
 
 func (g *PieceGroup) CheckPieceMerge(pieceMap map[PieceId]*Piece) (GroupId, int, int) {

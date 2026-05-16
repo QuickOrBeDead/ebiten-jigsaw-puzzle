@@ -5,6 +5,12 @@ go 1.26.2
 require github.com/hajimehoshi/ebiten/v2 v2.9.9
 
 require (
+	github.com/ebitengine/oto/v3 v3.4.0 // indirect
+	github.com/jfreymuth/oggvorbis v1.0.5 // indirect
+	github.com/jfreymuth/vorbis v1.0.2 // indirect
+)
+
+require (
 	github.com/TheTitanrain/w32 v0.0.0-20200114052255-2654d97dbd3d // indirect
 	github.com/ebitengine/gomobile v0.0.0-20260211053922-3d992dae95d1 // indirect
 	github.com/ebitengine/hideconsole v1.0.0 // indirect

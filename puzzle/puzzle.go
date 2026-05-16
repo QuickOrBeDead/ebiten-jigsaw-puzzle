@@ -10,6 +10,7 @@ import (
 )
 
 type Puzzle struct {
+	PieceCount         int
 	pieceMap           map[piece.PieceId]*piece.Piece
 	groupsMap          map[piece.GroupId]*piece.PieceGroup
 	groupSlice         []*piece.PieceGroup
@@ -32,6 +33,7 @@ func NewPuzzle(pieces []*piece.Piece, groups []*piece.PieceGroup, rows, cols int
 	}
 
 	return &Puzzle{
+		PieceCount:         len(pieces),
 		pieceMap:           pieceMap,
 		groupsMap:          groupsMap,
 		groupSlice:         groups,
@@ -84,8 +86,12 @@ func (puz *Puzzle) DropPuzzlePieces() bool {
 	return false
 }
 
+func (puz *Puzzle) GroupCount() int {
+	return len(puz.groupsMap)
+}
+
 func (puz *Puzzle) IsSolved() bool {
-	return len(puz.groupsMap) == 1
+	return puz.GroupCount() == 1
 }
 
 func (p *Puzzle) GetCompletePercentage() int {
@@ -111,6 +117,7 @@ func (puz *Puzzle) Draw(screen *ebiten.Image) {
 		screen.DrawImage(puz.cachedImage, nil)
 
 		ag := puz.groupsMap[puz.activeGroup]
+		ag.DrawShadow(screen)
 		ag.Draw(screen)
 		return
 	}
@@ -125,6 +132,8 @@ func (puz *Puzzle) mergeGroups(sourceId, targetId piece.GroupId, translateX, tra
 	for _, p := range s.Pieces {
 		p.GroupId = targetId
 		p.Move(translateX, translateY)
+
+		t.MergePath(p)
 	}
 
 	t.ResetNeighbors(puz.pieceMap, s.Pieces)

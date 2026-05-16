@@ -5,8 +5,9 @@ import (
 )
 
 type GameImage struct {
-	image *ebiten.Image
-	name  string
+	image      *ebiten.Image
+	name       string
+	pieceCount int
 }
 
 func NewGameImage() *GameImage {
@@ -28,4 +29,12 @@ func (g *GameImage) GetImage() *ebiten.Image {
 
 func (g *GameImage) GetName() string {
 	return g.name
+}
+
+func (g *GameImage) SetPieceCount(count int) {
+	g.pieceCount = count
+}
+
+func (g *GameImage) GetPieceCount() int {
+	return g.pieceCount
 }

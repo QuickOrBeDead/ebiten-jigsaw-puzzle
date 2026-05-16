@@ -15,8 +15,8 @@ const (
 var (
 	// Primary background colors - deep dark blue-gray theme
 	BackgroundColor = color.RGBA{R: 18, G: 18, B: 24, A: 255} // #121218
-	HeaderColor     = color.RGBA{R: 24, G: 24, B: 32, A: 255} // #181820
-	FooterColor     = color.RGBA{R: 24, G: 24, B: 32, A: 255} // #181820
+	HeaderColor     = color.RGBA{R: 26, G: 29, B: 40, A: 255} // #1A1D28
+	FooterColor     = color.RGBA{R: 26, G: 29, B: 40, A: 255} // #1A1D28
 
 	// Surface colors for panels, cards, and UI elements
 	SurfaceColor       = color.RGBA{R: 32, G: 32, B: 42, A: 255} // #20202A
@@ -24,25 +24,25 @@ var (
 	SurfaceActiveColor = color.RGBA{R: 48, G: 48, B: 60, A: 255} // #30303C
 
 	// Text colors
-	TitleColor        = color.RGBA{R: 80, G: 200, B: 120, A: 255}  // #FFD764 - Warmer golden
-	BodyTextColor     = color.RGBA{R: 220, G: 220, B: 230, A: 255} // #DCDCE6 - Soft white
-	MutedTextColor    = color.RGBA{R: 140, G: 140, B: 155, A: 255} // #8C8C9B - Secondary text
+	TitleColor        = color.RGBA{R: 212, G: 168, B: 75, A: 255}  // #D4A84B - Warm amber/gold
+	BodyTextColor     = color.RGBA{R: 226, G: 228, B: 235, A: 255} // #E2E4EB - Soft white
+	MutedTextColor    = color.RGBA{R: 142, G: 146, B: 163, A: 255} // #8E92A3 - Secondary text
 	DisabledTextColor = color.RGBA{R: 90, G: 90, B: 100, A: 255}   // #5A5A64 - Disabled state
 
 	// Accent colors - professional blue
-	PrimaryColor       = color.RGBA{R: 66, G: 135, B: 245, A: 255} // #4287F5
-	PrimaryHoverColor  = color.RGBA{R: 86, G: 155, B: 255, A: 255} // #569BFF
-	PrimaryActiveColor = color.RGBA{R: 56, G: 115, B: 225, A: 255} // #3873E1
+	PrimaryColor       = color.RGBA{R: 70, G: 140, B: 245, A: 255} // #468CF5
+	PrimaryHoverColor  = color.RGBA{R: 92, G: 160, B: 255, A: 255} // #5CA0FF
+	PrimaryActiveColor = color.RGBA{R: 55, G: 120, B: 230, A: 255} // #3778E6
 
 	// Semantic colors
-	SuccessColor = color.RGBA{R: 80, G: 200, B: 120, A: 255} // #50C878
+	SuccessColor = color.RGBA{R: 76, G: 175, B: 132, A: 255} // #4CAF84 - Teal-green
 	WarningColor = color.RGBA{R: 255, G: 180, B: 60, A: 255} // #FFB43C
-	ErrorColor   = color.RGBA{R: 220, G: 80, B: 80, A: 255}  // #DC5050
+	ErrorColor   = color.RGBA{R: 225, G: 85, B: 85, A: 255}  // #E15555
 
-	// Header button colors
-	HeaderButtonColor       = color.RGBA{R: 40, G: 40, B: 52, A: 255} // #282834
-	HeaderButtonHoverColor  = color.RGBA{R: 56, G: 56, B: 68, A: 255} // #383844
-	HeaderButtonActiveColor = color.RGBA{R: 66, G: 66, B: 80, A: 255} // #424250
+	// Header button colors - slightly more contrast against header
+	HeaderButtonColor       = color.RGBA{R: 42, G: 44, B: 56, A: 255} // #2A2C38
+	HeaderButtonHoverColor  = color.RGBA{R: 58, G: 60, B: 72, A: 255} // #3A3C48
+	HeaderButtonActiveColor = color.RGBA{R: 68, G: 70, B: 84, A: 255} // #444654
 
 	// Shadow colors
 	ShadowColor     = color.RGBA{R: 0, G: 0, B: 0, A: 40} // Subtle shadow

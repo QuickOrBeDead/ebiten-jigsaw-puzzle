@@ -37,10 +37,14 @@ func NewPiece(id PieceId, groupId GroupId, pos image.Point, geo *PieceGeometry, 
 	p.drawOpts.GeoM.Translate(float64(p.Pos.X), float64(p.Pos.Y))
 
 	boxSize := geo.BoxSize
-	mask := common.CreateMask(int(boxSize.W), int(boxSize.H), geo.Path, false)
+	mask := common.CreateMask(int(boxSize.W), int(boxSize.H), geo.Path, true)
 
 	p.hitMask = common.CreateImageAlpha(mask)
 	p.image = createPieceImage(boxSize, mask, picture)
+
+	if int(boxSize.W) > 0 && int(boxSize.H) > 0 {
+		applyBevelShader(p.image, DefaultBevelConfig)
+	}
 
 	mask.Deallocate()
 
@@ -100,10 +104,8 @@ func (p *Piece) Draw(screen *ebiten.Image) {
 func createPieceImage(boxSize common.Size, mask *ebiten.Image, picture *ebiten.Image) *ebiten.Image {
 	intermediate := ebiten.NewImage(int(boxSize.W), int(boxSize.H))
 
-	// Draw mask to intermediate
 	intermediate.DrawImage(mask, nil)
 
-	// Apply composite operation
 	op := &ebiten.DrawImageOptions{}
 	op.Blend = ebiten.BlendSourceIn
 	intermediate.DrawImage(picture, op)
