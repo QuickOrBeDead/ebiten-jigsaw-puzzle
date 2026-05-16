@@ -12,7 +12,7 @@ import (
 type ButtonSize int
 
 const (
-	ButtonSizeSmall  ButtonSize = iota
+	ButtonSizeSmall ButtonSize = iota
 	ButtonSizeNormal
 	ButtonSizeBig
 )
@@ -20,7 +20,7 @@ const (
 type ButtonColor int
 
 const (
-	ButtonColorPrimary   ButtonColor = iota
+	ButtonColorPrimary ButtonColor = iota
 	ButtonColorSecondary
 )
 
@@ -47,7 +47,7 @@ type buttonColorDef struct {
 
 var buttonSizeDefs = map[ButtonSize]buttonSizeDef{
 	ButtonSizeSmall:  {80, 40},
-	ButtonSizeNormal: {160, 44},
+	ButtonSizeNormal: {140, 44},
 	ButtonSizeBig:    {260, 60},
 }
 
@@ -66,26 +66,11 @@ var buttonColorDefs = map[ButtonColor]buttonColorDef{
 	},
 }
 
-func resolveButtonSize(height float32) ButtonSize {
-	if height <= 40 {
-		return ButtonSizeSmall
-	} else if height <= 50 {
-		return ButtonSizeNormal
-	}
-	return ButtonSizeBig
-}
-
-func resolveButtonColor(clr color.RGBA) ButtonColor {
-	if clr == HeaderButtonColor {
-		return ButtonColorSecondary
-	}
-	return ButtonColorPrimary
-}
-
 type buttonCache struct {
-	items []*buttonCacheItem
-	ids   map[buttonCacheKey]int
-	index int
+	items           []*buttonCacheItem
+	ids             map[buttonCacheKey]int
+	index           int
+	drawButtonBevel bool
 }
 
 type buttonCacheItem struct {
@@ -163,7 +148,13 @@ func (b *buttonCache) addImage(btnSize ButtonSize, btnColor ButtonColor, btnType
 		stateImg := ebiten.NewImage(imgW, imgH)
 		stateImg.DrawImage(img, nil)
 		col := getColor(baseColor, clr.hoverColor, hovered)
-		drawButtonBevel(stateImg, 0, 0, width, height, cornerRadius, col, pressed, DefaultButtonShaderConfig)
+
+		if b.drawButtonBevel {
+			drawButtonBevel(stateImg, 0, 0, width, height, cornerRadius, col, pressed, DefaultButtonShaderConfig)
+		} else {
+			FillPathWithColor(stateImg, path, 0, 0, col, true)
+		}
+
 		resultImg := ebiten.NewImage(imgW, imgH)
 		resultImg.DrawImage(stateImg, nil)
 		if borderWidth > 0 {
@@ -207,4 +198,11 @@ func getColor(buttonColor, hoverColor color.RGBA, isHovered bool) color.RGBA {
 	a := float32(baseColor.A) + (float32(hoverColor.A)-float32(baseColor.A))*hover
 	currentColor := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(bl), A: uint8(a)}
 	return currentColor
+}
+
+func btnShadowOffset(isPressed bool) int {
+	if isPressed {
+		return 2
+	}
+	return 7
 }

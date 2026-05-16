@@ -21,13 +21,11 @@ func NewHowToPlayScene(context *common.SceneContext) *HowToPlayScene {
 		title: common.NewTextRenderer(common.RobotoBoldFontName, common.TitleColor, 36, etxt.Center),
 		body:  common.NewTextRenderer(common.RobotoRegularFontName, common.BodyTextColor, 24, etxt.Center),
 		backBtn: common.NewButton(
+			common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeSmall,
 			20, 12,
-			80, 40,
 			"Back",
 			common.ButtonOption.WithFontSize(18),
 			common.ButtonOption.WithFontColor(common.BodyTextColor),
-			common.ButtonOption.WithColor(common.HeaderButtonColor),
-			common.ButtonOption.WithHoverColor(common.HeaderButtonHoverColor),
 			common.ButtonOption.WithOnClick(func() {
 				context.SceneManager.SetScene("home")
 			}),

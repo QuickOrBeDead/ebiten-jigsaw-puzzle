@@ -47,8 +47,6 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 
 	text := common.NewTextRenderer(common.RobotoBoldFontName, common.BodyTextColor, 40, etxt.Center)
 	buttonOptions := []common.ButtonOptFunc{
-		common.ButtonOption.WithColor(common.HeaderButtonColor),
-		common.ButtonOption.WithHoverColor(common.HeaderButtonHoverColor),
 		common.ButtonOption.WithFontColor(common.BodyTextColor),
 		common.ButtonOption.WithFontSize(18),
 	}
@@ -83,23 +81,29 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 		image:             image,
 		previewImage:      previewImage,
 		headerButtons: []*common.Button{
-			common.NewButton(1025, 12, 80, 40, "Restart", buttonOptions...),
-			common.NewButton(1150, 12, 80, 40, "Home", buttonOptions...),
+			common.NewButton(
+				common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeSmall,
+				1025, 12, "Restart",
+				buttonOptions...,
+			),
+			common.NewButton(
+				common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeSmall,
+				1150, 12, "Home",
+				buttonOptions...,
+			),
 		},
 		footerButtons: []*common.Button{
-			common.NewButton(20, 0, 80, 36, "Image",
+			common.NewButton(
+				common.ButtonTypeToggle, common.ButtonColorSecondary, common.ButtonSizeSmall,
+				20, 0, "Image",
 				append(buttonOptions,
-					common.ButtonOption.WithToggle(true),
-					common.ButtonOption.WithActiveColor(common.PrimaryColor),
-					common.ButtonOption.WithColor(common.SurfaceColor),
 					common.ButtonOption.WithFontSize(16),
 				)...,
 			),
-			common.NewButton(140, 0, 80, 36, "Ghost",
+			common.NewButton(
+				common.ButtonTypeToggle, common.ButtonColorSecondary, common.ButtonSizeSmall,
+				140, 0, "Ghost",
 				append(buttonOptions,
-					common.ButtonOption.WithToggle(true),
-					common.ButtonOption.WithActiveColor(common.PrimaryColor),
-					common.ButtonOption.WithColor(common.SurfaceColor),
 					common.ButtonOption.WithFontSize(16),
 				)...,
 			),
@@ -161,7 +165,7 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 
 	for _, button := range g.headerButtons {
 		button.Update(context)
-		if button.Clicked {
+		if button.Clicked() {
 			g.frameCacheValid = false
 			switch button.Label {
 			case "Home":
@@ -174,7 +178,7 @@ func (g *GameScene) Update(context *common.SceneContext) error {
 
 	for _, button := range g.footerButtons {
 		button.Update(context)
-		if button.Clicked {
+		if button.Clicked() {
 			g.frameCacheValid = false
 			switch button.Label {
 			case "Image":
@@ -299,7 +303,7 @@ func (g *GameScene) drawFooter(screen *ebiten.Image) {
 
 	// Draw footer buttons - centered vertically
 	for _, button := range g.footerButtons {
-		button.Y = footerY + (g.footerHeight-button.Height)/2
+		button.Y = footerY + (g.footerHeight-button.Height())/2
 		button.Draw(screen)
 	}
 

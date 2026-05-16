@@ -23,40 +23,33 @@ type HomeScene struct {
 func NewHomeScene(context *common.SceneContext) *HomeScene {
 	text := common.NewTextRenderer(common.RobotoBoldFontName, common.TitleColor, 40, etxt.Center)
 
-	btnW := float32(260)
-	btnH := float32(60)
 	gapY := float32(20)
 
-	startX := (float32(common.ScreenWidth) - btnW) / 2
+	startX := (float32(common.ScreenWidth) - 260) / 2
 
 	topY := float32(170)
 
 	btnOpts := []common.ButtonOptFunc{
 		common.ButtonOption.WithFontSize(24),
 		common.ButtonOption.WithFontColor(common.BodyTextColor),
-		common.ButtonOption.WithColor(common.SurfaceColor),
-		common.ButtonOption.WithHoverColor(common.SurfaceHoverColor),
-		common.ButtonOption.WithShadowColor(common.ShadowColor),
 	}
 
 	return &HomeScene{
 		text:       text,
 		background: drawBackground(text),
 		playBtn: common.NewButton(
+			common.ButtonTypeNormal, common.ButtonColorPrimary, common.ButtonSizeBig,
 			startX, topY,
-			btnW, btnH,
 			"Play",
 			append(btnOpts,
-				common.ButtonOption.WithColor(common.PrimaryColor),
-				common.ButtonOption.WithHoverColor(common.PrimaryHoverColor),
 				common.ButtonOption.WithOnClick(func() {
 					context.SceneManager.SetScene("startGame")
 				}),
 			)...,
 		),
 		howToPlayBtn: common.NewButton(
-			startX, topY+(btnH+gapY)*1,
-			btnW, btnH,
+			common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeBig,
+			startX, topY+(60+gapY)*1,
 			"How to Play",
 			append(btnOpts,
 				common.ButtonOption.WithOnClick(func() {
@@ -65,8 +58,8 @@ func NewHomeScene(context *common.SceneContext) *HomeScene {
 			)...,
 		),
 		settingsBtn: common.NewButton(
-			startX, topY+(btnH+gapY)*2,
-			btnW, btnH,
+			common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeBig,
+			startX, topY+(60+gapY)*2,
 			"Settings",
 			append(btnOpts,
 				common.ButtonOption.WithOnClick(func() {
@@ -75,8 +68,8 @@ func NewHomeScene(context *common.SceneContext) *HomeScene {
 			)...,
 		),
 		creditsBtn: common.NewButton(
-			startX, topY+(btnH+gapY)*3,
-			btnW, btnH,
+			common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeBig,
+			startX, topY+(60+gapY)*3,
 			"Credits",
 			append(btnOpts,
 				common.ButtonOption.WithOnClick(func() {
@@ -85,8 +78,8 @@ func NewHomeScene(context *common.SceneContext) *HomeScene {
 			)...,
 		),
 		quitBtn: common.NewButton(
-			startX, topY+(btnH+gapY)*4,
-			btnW, btnH,
+			common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeBig,
+			startX, topY+(60+gapY)*4,
 			"Quit",
 			btnOpts...,
 		),
@@ -125,7 +118,7 @@ func (h *HomeScene) Update(context *common.SceneContext) error {
 	h.settingsBtn.Update(context)
 	h.creditsBtn.Update(context)
 	h.quitBtn.Update(context)
-	if h.quitBtn.Clicked {
+	if h.quitBtn.Clicked() {
 		return ebiten.Termination
 	}
 

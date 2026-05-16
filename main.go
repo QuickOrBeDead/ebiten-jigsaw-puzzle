@@ -25,7 +25,6 @@ func (g *Game) init() {
 	g.SceneManager.AddScene("howToPlay", func(ctx *common.SceneContext) common.Scene { return home.NewHowToPlayScene(ctx) })
 	g.SceneManager.AddScene("settings", func(ctx *common.SceneContext) common.Scene { return home.NewSettingsScene(ctx) })
 	g.SceneManager.AddScene("credits", func(ctx *common.SceneContext) common.Scene { return home.NewCreditsScene(ctx) })
-	g.SceneManager.AddScene("test", func(sc *common.SceneContext) common.Scene { return home.NewTestScene() })
 
 	g.SceneManager.SetScene("home")
 }

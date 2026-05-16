@@ -37,7 +37,6 @@ func newStartGameDialog() *startGameDialog {
 	sliderY := panelY + 215
 
 	btnY := panelY + 300
-	btnH := float32(44)
 
 	return &startGameDialog{
 		panelX: panelX,
@@ -46,24 +45,18 @@ func newStartGameDialog() *startGameDialog {
 		panelH: panelH,
 		slider: common.NewSlider(sliderX, sliderY, sliderW, 50, 12, 300, 12),
 		startButton: common.NewButton(
+			common.ButtonTypeNormal, common.ButtonColorPrimary, common.ButtonSizeNormal,
 			panelX+panelW-240, btnY,
-			160, btnH,
 			"Start Puzzle",
 			common.ButtonOption.WithFontSize(20),
 			common.ButtonOption.WithFontColor(common.BodyTextColor),
-			common.ButtonOption.WithColor(common.PrimaryColor),
-			common.ButtonOption.WithHoverColor(common.PrimaryHoverColor),
-			common.ButtonOption.WithShadowColor(common.ShadowColor),
 		),
 		cancelButton: common.NewButton(
+			common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeNormal,
 			panelX+50, btnY,
-			120, btnH,
 			"Cancel",
 			common.ButtonOption.WithFontSize(20),
 			common.ButtonOption.WithFontColor(common.BodyTextColor),
-			common.ButtonOption.WithColor(common.SurfaceColor),
-			common.ButtonOption.WithHoverColor(common.SurfaceHoverColor),
-			common.ButtonOption.WithShadowColor(common.ShadowColor),
 		),
 		text: common.NewTextRenderer(common.RobotoBoldFontName, common.BodyTextColor, 24, etxt.Center),
 	}
@@ -112,11 +105,11 @@ func (d *startGameDialog) ImageName() string {
 }
 
 func (d *startGameDialog) startClicked() bool {
-	return d.startButton.Clicked
+	return d.startButton.Clicked()
 }
 
 func (d *startGameDialog) cancelClicked() bool {
-	return d.cancelButton.Clicked
+	return d.cancelButton.Clicked()
 }
 
 func (d *startGameDialog) Update(context *common.SceneContext) {

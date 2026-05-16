@@ -125,23 +125,18 @@ func NewStartGameScene(gameImage *common.GameImage, context *common.SceneContext
 		images:    puzzleImages,
 		gameImage: gameImage,
 		uploadButton: common.NewButton(
-			float32((screenWidth-(220+48))/2), float32(buttonY),
-			220, 48,
+			common.ButtonTypeNormal, common.ButtonColorPrimary, common.ButtonSizeBig,
+			float32((screenWidth-260)/2), float32(buttonY),
 			"Upload Image",
 			common.ButtonOption.WithFontSize(22),
 			common.ButtonOption.WithFontColor(common.BodyTextColor),
-			common.ButtonOption.WithColor(common.PrimaryColor),
-			common.ButtonOption.WithHoverColor(common.PrimaryHoverColor),
-			common.ButtonOption.WithShadowColor(common.ShadowColor),
 		),
 		backBtn: common.NewButton(
+			common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeSmall,
 			20, 12,
-			80, 40,
 			"Back",
 			common.ButtonOption.WithFontSize(18),
 			common.ButtonOption.WithFontColor(common.BodyTextColor),
-			common.ButtonOption.WithColor(common.HeaderButtonColor),
-			common.ButtonOption.WithHoverColor(common.HeaderButtonHoverColor),
 			common.ButtonOption.WithOnClick(func() {
 				context.SceneManager.SetScene("home")
 			}),
@@ -157,7 +152,7 @@ func (s *StartGameScene) Update(context *common.SceneContext) error {
 	s.backBtn.Update(context)
 	s.uploadButton.Update(context)
 
-	if s.uploadButton.Clicked {
+	if s.uploadButton.Clicked() {
 		name, img, err := loadImageFromDesktop()
 		if err != nil && err != dialog.Cancelled {
 			return err

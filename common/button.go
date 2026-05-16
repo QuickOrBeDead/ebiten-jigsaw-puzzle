@@ -32,64 +32,6 @@ func (ButtonOptionBuilder) WithFontName(fontName string) ButtonOptFunc {
 	}
 }
 
-func (ButtonOptionBuilder) WithColor(color color.RGBA) ButtonOptFunc {
-	return func(b *Button) {
-		b.Color = color
-	}
-}
-
-func (ButtonOptionBuilder) WithHoverColor(hoverColor color.RGBA) ButtonOptFunc {
-	return func(b *Button) {
-		b.HoverColor = hoverColor
-	}
-}
-
-func (ButtonOptionBuilder) WithActiveColor(activeColor color.RGBA) ButtonOptFunc {
-	return func(b *Button) {
-		b.ActiveColor = activeColor
-	}
-}
-
-func (ButtonOptionBuilder) WithShadowColor(shadowColor color.RGBA) ButtonOptFunc {
-	return func(b *Button) {
-		b.ShadowColor = shadowColor
-	}
-}
-
-func (ButtonOptionBuilder) WithSize(size ButtonSize) ButtonOptFunc {
-	return func(b *Button) {
-		b.BtnSize = size
-	}
-}
-
-func (ButtonOptionBuilder) WithColorEnum(color ButtonColor) ButtonOptFunc {
-	return func(b *Button) {
-		b.BtnColor = color
-	}
-}
-
-func (ButtonOptionBuilder) WithType(typ ButtonType) ButtonOptFunc {
-	return func(b *Button) {
-		b.BtnType = typ
-	}
-}
-
-func (ButtonOptionBuilder) WithToggle(isToggle bool) ButtonOptFunc {
-	return func(b *Button) {
-		if isToggle {
-			b.BtnType = ButtonTypeToggle
-		} else {
-			b.BtnType = ButtonTypeNormal
-		}
-	}
-}
-
-func (ButtonOptionBuilder) WithCornerRadius(radius float32) ButtonOptFunc {
-	return func(b *Button) {
-		b.CornerRadius = radius
-	}
-}
-
 func (ButtonOptionBuilder) WithOnClick(onClickFunc func()) ButtonOptFunc {
 	return func(b *Button) {
 		b.OnClick = onClickFunc
@@ -99,68 +41,53 @@ func (ButtonOptionBuilder) WithOnClick(onClickFunc func()) ButtonOptFunc {
 type Button struct {
 	X            float32
 	Y            float32
-	Width        float32
-	Height       float32
-	Label        string
-	Color        color.RGBA
-	HoverColor   color.RGBA
-	ActiveColor  color.RGBA
-	ShadowColor  color.RGBA
-	Pressed      bool
-	Hovered      bool
 	HoverCursor  ebiten.CursorShapeType
-	Clicked      bool
 	OnClick      func()
 	FontSize     float64
 	FontColor    color.Color
 	FontName     string
-	IsToggle     bool
-	IsActive     bool
-	BorderColor  color.RGBA
-	BorderWidth  float32
-	CornerRadius float32
-	BtnSize      ButtonSize
-	BtnColor     ButtonColor
-	BtnType      ButtonType
+	width        float32
+	height       float32
+	Label        string
+	pressed      bool
+	hovered      bool
+	clicked      bool
+	isToggle     bool
+	isActive     bool
+	borderColor  color.RGBA
+	borderWidth  float32
+	cornerRadius float32
+	btnSize      ButtonSize
+	btnColor     ButtonColor
+	btnType      ButtonType
 	text         *TextRenderer
 	hitMask      *image.Alpha
 	cacheItem    *buttonCacheItem
 }
 
-func btnShadowOffset(isPressed bool) int {
-	if isPressed {
-		return 2
-	}
-	return 7
-}
-
-func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc) *Button {
+func NewButton(typ ButtonType, clr ButtonColor, size ButtonSize, x, y float32, label string, opts ...ButtonOptFunc) *Button {
 	fontSize := 16.0
 	fontColor := color.Black
 	fontName := RobotoBoldFontName
-	cornerRadius := height / 2
 
+	btnItem := buttonCacheManager.addImage(size, clr, typ)
 	btn := &Button{
 		X:            x,
 		Y:            y,
-		Width:        width,
-		Height:       height,
+		width:        btnItem.width,
+		height:       btnItem.height,
 		Label:        label,
 		HoverCursor:  ebiten.CursorShapePointer,
-		Color:        color.RGBA{R: 54, G: 153, B: 255, A: 255},
-		HoverColor:   color.RGBA{R: 72, G: 176, B: 255, A: 255},
-		ActiveColor:  color.RGBA{R: 40, G: 130, B: 240, A: 255},
-		ShadowColor:  color.RGBA{R: 0, G: 0, B: 0, A: 50},
 		FontName:     fontName,
 		FontSize:     fontSize,
 		FontColor:    fontColor,
-		CornerRadius: cornerRadius,
-		BorderWidth:  0,
-		IsToggle:     false,
-		IsActive:     false,
-		BtnSize:      resolveButtonSize(height),
-		BtnColor:     ButtonColorPrimary,
-		BtnType:      ButtonTypeNormal,
+		cornerRadius: btnItem.cornerRadius,
+		borderWidth:  0,
+		isToggle:     typ == ButtonTypeToggle,
+		isActive:     false,
+		btnSize:      size,
+		btnColor:     ButtonColorPrimary,
+		btnType:      typ,
 	}
 
 	for _, opt := range opts {
@@ -168,8 +95,8 @@ func NewButton(x, y, width, height float32, label string, opts ...ButtonOptFunc)
 	}
 
 	btn.text = NewTextRenderer(btn.FontName, btn.FontColor, btn.FontSize, etxt.Center)
-	btn.cacheItem = buttonCacheManager.addImage(btn.BtnSize, btn.BtnColor, btn.BtnType)
-	btn.hitMask = btn.cacheItem.hitMask
+	btn.cacheItem = btnItem
+	btn.hitMask = btnItem.hitMask
 
 	return btn
 }
@@ -194,8 +121,8 @@ func (b *Button) currentImg(isActive, hovered, pressed bool) *ebiten.Image {
 }
 
 func (b *Button) Draw(screen *ebiten.Image) {
-	isActive := b.BtnType == ButtonTypeToggle && b.IsActive
-	img := b.currentImg(isActive, b.Hovered, b.Pressed)
+	isActive := b.btnType == ButtonTypeToggle && b.isActive
+	img := b.currentImg(isActive, b.hovered, b.pressed)
 	if img == nil {
 		return
 	}
@@ -203,9 +130,9 @@ func (b *Button) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(float64(b.X), float64(b.Y))
 	screen.DrawImage(img, op)
 
-	cx := int(b.X) + int(b.Width/2) + int(b.CornerRadius)
-	cy := int(b.Y) + int(b.Height/2)
-	if b.Pressed {
+	cx := int(b.X) + int(b.width/2) + int(b.cornerRadius)
+	cy := int(b.Y) + int(b.height/2)
+	if b.pressed {
 		cy += 2
 	}
 	b.text.DrawEmbossedAutoWithShadow(screen, b.Label, cx, cy, color.RGBA{0, 0, 0, 70}, 1, 1)
@@ -220,33 +147,41 @@ func (b *Button) DrawTest(screen *ebiten.Image, isActive, hovered, pressed bool,
 	op.GeoM.Translate(x, y)
 	screen.DrawImage(img, op)
 
-	cx := int(x) + int(b.Width/2) + int(b.CornerRadius)
-	cy := int(y) + int(b.Height/2)
+	cx := int(x) + int(b.width/2) + int(b.cornerRadius)
+	cy := int(y) + int(b.height/2)
 	if pressed {
 		cy += 2
 	}
 	b.text.DrawEmbossedAutoWithShadow(screen, b.Label, cx, cy, color.RGBA{0, 0, 0, 70}, 1, 1)
 }
 
-func (b *Button) Update(context *SceneContext) {
-	b.Clicked = false
-	b.Hovered = b.isHovered()
+func (b *Button) Height() float32 {
+	return b.height
+}
 
-	if b.Hovered {
+func (b *Button) Clicked() bool {
+	return b.clicked
+}
+
+func (b *Button) Update(context *SceneContext) {
+	b.clicked = false
+	b.hovered = b.isHovered()
+
+	if b.hovered {
 		context.Cursor = b.HoverCursor
 	}
 
 	pressed := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
-	if pressed && b.Hovered {
-		b.Pressed = true
+	if pressed && b.hovered {
+		b.pressed = true
 	}
 
-	if b.Pressed && !pressed {
-		if b.Hovered {
-			if b.BtnType == ButtonTypeToggle {
-				b.IsActive = !b.IsActive
+	if b.pressed && !pressed {
+		if b.hovered {
+			if b.btnType == ButtonTypeToggle {
+				b.isActive = !b.isActive
 			}
-			b.Clicked = true
+			b.clicked = true
 			if AudioManager != nil {
 				AudioManager.PlayClick()
 			}
@@ -254,7 +189,7 @@ func (b *Button) Update(context *SceneContext) {
 				b.OnClick()
 			}
 		}
-		b.Pressed = false
+		b.pressed = false
 	}
 }
 

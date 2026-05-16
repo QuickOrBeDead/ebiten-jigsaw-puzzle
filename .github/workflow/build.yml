@@ -1,0 +1,59 @@
+name: Build Ebitengine Game
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # We define the runner OS and the target binary name
+        include:
+          - os: ubuntu-latest
+            artifact_name: game-linux
+            goos: linux
+          - os: windows-latest
+            artifact_name: game-windows.exe
+            goos: windows
+          - os: macos-latest
+            artifact_name: game-macos
+            goos: darwin
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22' # Or your preferred version
+
+      - name: Install Linux Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev pkg-config
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: amd64
+          CGO_ENABLED: 1
+        run: |
+          # Use -ldflags="-H=windowsgui" for Windows to hide the console
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            go build -ldflags="-H=windowsgui" -o ${{ matrix.artifact_name }} .
+          else
+            go build -o ${{ matrix.artifact_name }} .
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
