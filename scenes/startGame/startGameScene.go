@@ -147,6 +147,10 @@ func NewStartGameScene(gameImage *common.GameImage, context *common.SceneContext
 	}
 }
 
+func (s *StartGameScene) Init() {
+	s.startDialog.open = false
+}
+
 func (s *StartGameScene) Update(context *common.SceneContext) error {
 	mx, my := ebiten.CursorPosition()
 

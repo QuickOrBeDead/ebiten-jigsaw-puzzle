@@ -193,6 +193,10 @@ func (b *Button) Update(context *SceneContext) {
 	}
 }
 
+func (b *Button) Reset() {
+	b.isActive = false
+}
+
 func (b *Button) isHovered() bool {
 	mx, my := ebiten.CursorPosition()
 	return b.hitMask.AlphaAt(mx-int(b.X), my-int(b.Y)).A > 0

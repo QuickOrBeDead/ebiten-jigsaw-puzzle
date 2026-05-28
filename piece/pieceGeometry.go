@@ -15,6 +15,7 @@ type PieceGeometry struct {
 	Edges                    [4]edge.EdgeType
 	EdgeGeos                 [4]edge.EdgeGeometry
 	BoxSize                  common.Size
+	PieceSize                common.Size
 	Path                     *vector.Path
 }
 
@@ -30,9 +31,11 @@ func NewPieceGeometry(size common.Size, top, right, bottom, left float32) *Piece
 	edges := createEdges(top, bottom, right, left)
 	edgeGeos := createEdgeGeos(size, top, bottom, right, left)
 	boxSize := calculateBoxSize(size, edges, edgeGeos)
+	pieceSize := calculatePieceSize(size, edges, edgeGeos)
 	path := generatePath(size, edges, edgeGeos)
 
 	p.BoxSize = boxSize
+	p.PieceSize = pieceSize
 	p.Path = path
 	p.Edges = edges
 	p.EdgeGeos = edgeGeos
@@ -201,6 +204,28 @@ func calculateBoxSize(baseSize common.Size, edges [4]edge.EdgeType, edgeGeos [4]
 	}
 
 	if edges[edge.Bottom] != edge.EdgeFlat {
+		tabHeight += edgeGeos[edge.Bottom].TabHeight
+	}
+
+	return common.Size{W: baseSize.W + tabWidth, H: baseSize.H + tabHeight}
+}
+
+func calculatePieceSize(baseSize common.Size, edges [4]edge.EdgeType, edgeGeos [4]edge.EdgeGeometry) common.Size {
+	tabWidth := 0
+	if edges[edge.Left] > 0 {
+		tabWidth += edgeGeos[edge.Left].TabWidth
+	}
+
+	if edges[edge.Right] > 0 {
+		tabWidth += edgeGeos[edge.Right].TabWidth
+	}
+
+	tabHeight := 0
+	if edges[edge.Top] > 0 {
+		tabHeight += edgeGeos[edge.Top].TabHeight
+	}
+
+	if edges[edge.Bottom] > 0 {
 		tabHeight += edgeGeos[edge.Bottom].TabHeight
 	}
 
