@@ -22,6 +22,7 @@ type PieceGroup struct {
 	shadowImage           *ebiten.Image
 	shadowImageCacheValid bool
 	boundsX, boundsY      int
+	boundsW, boundsH      int
 }
 
 var inverseEdge = [4]edge.Edge{edge.Bottom, edge.Left, edge.Top, edge.Right}
@@ -38,6 +39,7 @@ func NewPieceGroup(id GroupId, p *Piece) *PieceGroup {
 		y:                   p.Pos.Y,
 	}
 	pg.path.AddPath(p.Geo.Path, &vector.AddPathOptions{})
+	pg.updateBounds()
 	pg.cacheShadow()
 	return pg
 }
@@ -46,6 +48,7 @@ func (pg *PieceGroup) MergePath(p *Piece) {
 	op := &vector.AddPathOptions{}
 	op.GeoM.Translate(float64(p.Pos.X-pg.x), float64(p.Pos.Y-pg.y))
 	pg.path.AddPath(p.Geo.Path, op)
+	pg.updateBounds()
 	pg.shadowImageCacheValid = false
 }
 
@@ -73,16 +76,18 @@ func (g *PieceGroup) Bounds() (x, y, w, h int) {
 	return minX, minY, maxX - minX, maxY - minY
 }
 
+func (g *PieceGroup) updateBounds() {
+	g.boundsX, g.boundsY, g.boundsW, g.boundsH = g.Bounds()
+}
+
 func (g *PieceGroup) cacheShadow() {
 	shadowPadding := 10
-	bx, by, bw, bh := g.Bounds()
-	g.boundsX, g.boundsY = bx, by
 	if g.shadowImage != nil {
 		g.shadowImage.Deallocate()
 	}
 
-	g.shadowImage = ebiten.NewImage(bw+shadowPadding*2, bh+shadowPadding*2)
-	common.DrawShadowForPath(g.shadowImage, float64(-bx+shadowPadding), float64(-by+shadowPadding), g.path)
+	g.shadowImage = ebiten.NewImage(g.boundsW+shadowPadding*2, g.boundsH+shadowPadding*2)
+	common.DrawShadowForPath(g.shadowImage, float64(-g.boundsX+shadowPadding), float64(-g.boundsY+shadowPadding), g.path)
 }
 
 func (g *PieceGroup) Contains(mx, my int) bool {
@@ -101,12 +106,32 @@ func (g *PieceGroup) ChangePosition(mx, my int) {
 	dx := mx - g.prevX
 	dy := my - g.prevY
 
+	if dx < 0 {
+		if g.x+g.boundsX+dx < 0 {
+			dx = -(g.x + g.boundsX)
+		}
+	} else if dx > 0 {
+		if g.x+g.boundsX+g.boundsW+dx > common.ScreenWidth {
+			dx = common.ScreenWidth - (g.x + g.boundsX + g.boundsW)
+		}
+	}
+
+	if dy < 0 {
+		if g.y+g.boundsY+dy < common.HeaderHeight {
+			dy = common.HeaderHeight - (g.y + g.boundsY)
+		}
+	} else if dy > 0 {
+		if g.y+g.boundsY+g.boundsH+dy > common.ScreenHeight-common.FooterHeight {
+			dy = common.ScreenHeight - common.FooterHeight - (g.y + g.boundsY + g.boundsH)
+		}
+	}
+
 	for _, p := range g.Pieces {
 		p.Move(dx, dy)
 	}
 
-	g.prevX = mx
-	g.prevY = my
+	g.prevX = g.prevX + dx
+	g.prevY = g.prevY + dy
 
 	g.x += dx
 	g.y += dy

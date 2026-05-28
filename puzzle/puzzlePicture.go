@@ -17,7 +17,7 @@ import (
 )
 
 type PuzzlePicture struct {
-	image *ebiten.Image
+	Image *ebiten.Image
 }
 
 func NewPuzzlePicture(image *ebiten.Image) *PuzzlePicture {
@@ -34,7 +34,7 @@ func NewPuzzlePicture(image *ebiten.Image) *PuzzlePicture {
 	op.GeoM.Scale(scale, scale)
 	puzzleImage.DrawImage(image, op)
 
-	return &PuzzlePicture{image: puzzleImage}
+	return &PuzzlePicture{Image: puzzleImage}
 }
 
 func (p *PuzzlePicture) CreatePuzzle(pieceCount int) *Puzzle {
@@ -89,7 +89,7 @@ func (p *PuzzlePicture) CreatePuzzle(pieceCount int) *Puzzle {
 				neighbors[edge.Top] = top
 				neighbors[edge.Bottom] = bottom
 
-				pic := p.image.SubImage(image.Rect(int(d.picX), int(d.picY), int(d.picX+d.geo.BoxSize.W), int(d.picY+d.geo.BoxSize.H))).(*ebiten.Image)
+				pic := p.Image.SubImage(image.Rect(int(d.picX), int(d.picY), int(d.picX+d.geo.BoxSize.W), int(d.picY+d.geo.BoxSize.H))).(*ebiten.Image)
 				p := piece.NewPiece(pieceId, pieceGroupId, image.Pt(int(d.randomX), int(d.randomY)), d.geo, neighbors, pic)
 
 				pieces[idx] = p
@@ -116,7 +116,7 @@ type pieceData struct {
 }
 
 func calculatePieceData(p *PuzzlePicture, cols int, rows int, pieceCount int) []pieceData {
-	pictureW, pictureH := p.image.Bounds().Dx(), p.image.Bounds().Dy()
+	pictureW, pictureH := p.Image.Bounds().Dx(), p.Image.Bounds().Dy()
 
 	// Distribute pixels evenly across columns and rows
 	colWidths := make([]int, cols)

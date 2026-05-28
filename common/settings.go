@@ -5,6 +5,8 @@ import "image/color"
 const (
 	ScreenWidth  = 1280
 	ScreenHeight = 720
+	HeaderHeight = 64 // Height of the game header bar
+	FooterHeight = 56 // Height of the game footer bar
 	// Spawn area bounds for puzzle pieces
 	SpawnAreaLeftMaxX     = 320 // Max X for left spawn column (320px from left)
 	SpawnAreaRightMinX    = 960 // Min X for right spawn column (ScreenWidth - SpawnAreaLeftMaxX)

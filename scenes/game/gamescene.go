@@ -25,6 +25,7 @@ type GameScene struct {
 	endTime           int64
 	isPuzzleCompleted bool
 	image             *ebiten.Image
+	puzzleImage       *ebiten.Image
 	showGhost         bool
 	showImage         bool
 	previewImage      *common.PreviewImage
@@ -111,6 +112,7 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 	}
 
 	pp := puzzle.NewPuzzlePicture(s.image)
+	s.puzzleImage = pp.Image
 	s.puzzle = pp.CreatePuzzle(gameImage.GetPieceCount())
 
 	return s
@@ -231,10 +233,10 @@ func (g *GameScene) renderFrame(dst *ebiten.Image) {
 		opt.ColorScale.Scale(0.5, 0.5, 0.5, 1)
 
 		opt.GeoM.Translate(
-			(float64(common.ScreenWidth)-float64(g.image.Bounds().Dx()))/2,
-			(float64(common.ScreenHeight)-float64(g.image.Bounds().Dy()))/2,
+			(float64(common.ScreenWidth)-float64(g.puzzleImage.Bounds().Dx()))/2,
+			(float64(common.ScreenHeight)-float64(g.puzzleImage.Bounds().Dy()))/2,
 		)
-		dst.DrawImage(g.image, opt)
+		dst.DrawImage(g.puzzleImage, opt)
 	}
 
 	g.puzzle.Draw(dst)
