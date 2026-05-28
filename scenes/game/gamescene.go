@@ -14,6 +14,7 @@ import (
 )
 
 type GameScene struct {
+	gameImage         *common.GameImage
 	puzzle            *puzzle.Puzzle
 	headerHeight      float32
 	footerHeight      float32
@@ -24,7 +25,6 @@ type GameScene struct {
 	startTime         int64
 	endTime           int64
 	isPuzzleCompleted bool
-	image             *ebiten.Image
 	puzzleImage       *ebiten.Image
 	showGhost         bool
 	showImage         bool
@@ -42,6 +42,8 @@ type GameScene struct {
 	text *common.TextRenderer
 }
 
+const footerHeight = 56
+
 func NewGameScene(gameImage *common.GameImage) *GameScene {
 	ebiten.SetScreenClearedEveryFrame(false)
 	ebiten.SetVsyncEnabled(false)
@@ -52,21 +54,8 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 		common.ButtonOption.WithFontSize(18),
 	}
 
-	margin := 10.
-	const footerHeight = 56
-	image := gameImage.GetImage()
-
-	previewImage := common.NewPreviewImage(
-		image,
-		margin,
-		0,
-		0.5,
-		common.PreviewImageOption.WithBGColor(color.Black),
-		common.PreviewImageOption.WithBorderColor(common.PrimaryColor))
-
-	previewImage.Y = float64(common.ScreenHeight) - float64(previewImage.ScaledH) - float64(footerHeight) - margin
-
 	s := &GameScene{
+		gameImage:         gameImage,
 		text:              text,
 		headerHeight:      64,
 		footerHeight:      footerHeight,
@@ -79,8 +68,6 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 		showGhost:         false,
 		showImage:         false,
 		isPuzzleCompleted: false,
-		image:             image,
-		previewImage:      previewImage,
 		headerButtons: []*common.Button{
 			common.NewButton(
 				common.ButtonTypeNormal, common.ButtonColorSecondary, common.ButtonSizeSmall,
@@ -111,11 +98,38 @@ func NewGameScene(gameImage *common.GameImage) *GameScene {
 		},
 	}
 
-	pp := puzzle.NewPuzzlePicture(s.image)
-	s.puzzleImage = pp.Image
-	s.puzzle = pp.CreatePuzzle(gameImage.GetPieceCount())
-
 	return s
+}
+
+func (g *GameScene) Init() {
+	margin := 10.
+	image := g.gameImage.GetImage()
+
+	previewImage := common.NewPreviewImage(
+		image,
+		margin,
+		0,
+		0.5,
+		common.PreviewImageOption.WithBGColor(color.Black),
+		common.PreviewImageOption.WithBorderColor(common.PrimaryColor))
+
+	previewImage.Y = float64(common.ScreenHeight) - float64(previewImage.ScaledH) - float64(footerHeight) - margin
+
+	pp := puzzle.NewPuzzlePicture(image)
+	g.puzzleImage = pp.Image
+	g.previewImage = previewImage
+	g.puzzle = pp.CreatePuzzle(g.gameImage.GetPieceCount())
+	g.isPuzzleCompleted = false
+	g.showGhost = false
+	g.showImage = false
+	g.startTime = time.Now().Unix()
+	g.endTime = 0
+	g.lastInputTime = time.Now()
+	g.moves = 0
+
+	for _, button := range g.footerButtons {
+		button.Reset()
+	}
 }
 
 func (g *GameScene) Update(context *common.SceneContext) error {

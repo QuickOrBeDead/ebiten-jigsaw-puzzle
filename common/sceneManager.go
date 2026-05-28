@@ -11,6 +11,10 @@ type Scene interface {
 	Draw(screen *ebiten.Image, context *SceneContext)
 }
 
+type InitableScene interface {
+	Init()
+}
+
 type SceneContext struct {
 	SceneManager *SceneManager
 	Cursor       ebiten.CursorShapeType
@@ -41,6 +45,9 @@ func (s *SceneManager) AddScene(name string, newSceneFunc func(*SceneContext) Sc
 func (s *SceneManager) SetScene(name string) {
 	if scene, ok := s.scenes[name]; ok {
 		s.current = scene
+		if initable, ok := scene.(InitableScene); ok {
+			initable.Init()
+		}
 		return
 	}
 
@@ -52,6 +59,9 @@ func (s *SceneManager) SetScene(name string) {
 	n := newSceneFunc(s.sceneContext)
 	s.scenes[name] = n
 	s.current = n
+	if initable, ok := n.(InitableScene); ok {
+		initable.Init()
+	}
 }
 
 func (s *SceneManager) Update() error {
